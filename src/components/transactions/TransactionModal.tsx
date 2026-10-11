@@ -2,6 +2,7 @@ import { component$, useStore, $, useVisibleTask$, type PropFunction } from '@bu
 import { useI18n, t } from '../../i18n/context';
 import { SvgIcon } from '../icons/SvgIcon';
 import { db, type Account, type Category, type Transaction } from '../../db';
+import { HoneyDateTimePicker } from '../common/HoneyDateTimePicker';
 import {
   SUPPORTED_CURRENCIES,
   convertCurrency,
@@ -63,7 +64,10 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
       state.amount = '';
       state.label = '';
       state.notes = '';
-      state.date = new Date().toISOString().split('T')[0];
+      const now = new Date();
+      const datePart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const timePart = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      state.date = `${datePart} ${timePart}`;
       if (accounts.length > 0) {
         state.accountId = accounts[0].id!;
         state.currencyCode = accounts[0].currencyCode;
@@ -393,18 +397,14 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
             )}
           </div>
 
-          {/* Date */}
-          <div>
-            <label class="block text-xs font-bold text-amber-900 mb-1">
-              {t(lang, 'tx.date')}
-            </label>
-            <input
-              type="date"
-              value={state.date}
-              onInput$={(e: any) => (state.date = e.target.value)}
-              class="w-full text-sm font-semibold text-slate-800 px-4 py-2.5 rounded-2xl border-2 border-amber-200 focus:border-amber-400 focus:outline-none bg-white"
-            />
-          </div>
+          {/* Date & Time Picker */}
+          <HoneyDateTimePicker
+            value={state.date}
+            onChange$={$((newVal: string) => {
+              state.date = newVal;
+            })}
+            label={t(lang, 'tx.date')}
+          />
 
           {/* Notes */}
           <div>

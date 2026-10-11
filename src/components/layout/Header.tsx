@@ -28,12 +28,9 @@ export const Header = component$<HeaderProps>(({ baseCurrency = 'EUR' }) => {
             <HoneyMascotSvg size={32} />
           </div>
           <div>
-            <h1 class="text-lg font-black tracking-tight text-amber-950 font-sans flex items-center gap-1.5 leading-none">
+            <h1 class="text-lg font-black tracking-tight text-amber-950 font-sans">
               HoneyBudget
             </h1>
-            <p class="text-[11px] font-medium text-amber-700/80 leading-tight">
-              {t(lang, 'app.tagline')}
-            </p>
           </div>
         </a>
 

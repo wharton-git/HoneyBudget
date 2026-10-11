@@ -57,9 +57,6 @@ export default component$(() => {
             <SvgIcon name="wallet" size={22} class="text-amber-600" />
             <span>{t(lang, 'accounts.title')}</span>
           </h2>
-          <p class="text-xs font-semibold text-slate-500 mt-0.5">
-            Gérez vos différents comptes et devises
-          </p>
         </div>
 
         <button

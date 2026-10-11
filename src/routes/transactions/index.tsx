@@ -98,9 +98,6 @@ export default component$(() => {
             <SvgIcon name="arrow-transfer" size={22} class="text-amber-600" />
             <span>{t(lang, 'tx.title')}</span>
           </h2>
-          <p class="text-xs font-semibold text-slate-500 mt-0.5">
-            Historique complet de vos flux financiers
-          </p>
         </div>
 
         <button
@@ -199,8 +196,13 @@ export default component$(() => {
 
                   <div>
                     <div class="text-sm font-black text-slate-800">{tx.label}</div>
-                    <div class="text-[11px] font-semibold text-slate-500 flex items-center gap-2 mt-0.5">
-                      <span>{tx.date}</span>
+                    <div class="text-[11px] font-semibold text-slate-500 flex items-center flex-wrap gap-1.5 mt-0.5">
+                      <span>{tx.date.split(' ')[0]}</span>
+                      {tx.date.includes(' ') && (
+                        <span class="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-900 font-bold text-[10px]">
+                          {tx.date.split(' ')[1]}
+                        </span>
+                      )}
                       <span>•</span>
                       <span class="text-amber-800 font-bold">{acc?.name}</span>
                       {tx.notes && (

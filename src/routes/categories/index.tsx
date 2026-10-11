@@ -80,9 +80,6 @@ export default component$(() => {
             <SvgIcon name="pie-chart" size={22} class="text-amber-600" />
             <span>{t(lang, 'cat.title')}</span>
           </h2>
-          <p class="text-xs font-semibold text-slate-500 mt-0.5">
-            Suivi des plafonds de dépenses mensuelles ({state.baseCurrency})
-          </p>
         </div>
       </div>
 

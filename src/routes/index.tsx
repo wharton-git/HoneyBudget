@@ -115,23 +115,14 @@ export default component$(() => {
 
   return (
     <div class="space-y-6">
-      {/* Friendly Mascot Welcome Banner */}
-      <div class="relative overflow-hidden bg-linear-to-r from-amber-100/90 via-amber-50 to-orange-50 border-2 border-amber-200/90 rounded-3xl p-5 shadow-sm flex items-center justify-between">
-        <div class="space-y-1 z-10 max-w-lg">
-          <div class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-200/80 text-amber-900 text-xs font-black">
-            <SvgIcon name="honey-pot" size={12} />
-            <span>HoneyBudget</span>
-          </div>
-          <h2 class="text-xl sm:text-2xl font-black text-amber-950 tracking-tight">
+      {/* Greeting Header */}
+      <div class="flex items-center justify-between px-1">
+        <div>
+          <h2 class="text-2xl font-black text-amber-950 tracking-tight">
             {t(lang, 'dashboard.greeting')}
           </h2>
-          <p class="text-xs sm:text-sm font-medium text-amber-800/90">
-            {t(lang, 'dashboard.mascot_tip')}
-          </p>
         </div>
-        <div class="shrink-0 pl-2">
-          <HoneyMascotSvg size={84} class="hover:scale-110 transition-transform" />
-        </div>
+        <HoneyMascotSvg size={44} class="hover:scale-105 transition-transform" />
       </div>
 
       {/* Main Consolidated Balance Card */}
@@ -340,8 +331,13 @@ export default component$(() => {
                       <div class="text-xs font-black text-slate-800 truncate max-w-[180px] sm:max-w-xs">
                         {tx.label}
                       </div>
-                      <div class="text-[11px] font-semibold text-slate-500 flex items-center gap-2 mt-0.5">
-                        <span>{tx.date}</span>
+                      <div class="text-[11px] font-semibold text-slate-500 flex items-center flex-wrap gap-1.5 mt-0.5">
+                        <span>{tx.date.split(' ')[0]}</span>
+                        {tx.date.includes(' ') && (
+                          <span class="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-900 font-bold text-[10px]">
+                            {tx.date.split(' ')[1]}
+                          </span>
+                        )}
                         <span>•</span>
                         <span class="text-amber-800 font-bold">{acc?.name}</span>
                       </div>

@@ -34,6 +34,11 @@ export type IconName =
   | 'bar-chart'
   | 'trending-up'
   | 'calendar'
+  | 'clock'
+  | 'chevron-left'
+  | 'chevron-right'
+  | 'chevron-down'
+  | 'chevron-up'
   | 'search'
   | 'refresh'
   | 'info';
@@ -288,6 +293,21 @@ export const SvgIcon = component$<SvgIconProps>(({ name, size = 20, class: class
             <line x1="3" y1="10" x2="21" y2="10" />
           </>
         );
+      case 'clock':
+        return (
+          <>
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </>
+        );
+      case 'chevron-left':
+        return <polyline points="15 18 9 12 15 6" />;
+      case 'chevron-right':
+        return <polyline points="9 18 15 12 9 6" />;
+      case 'chevron-down':
+        return <polyline points="6 9 12 15 18 9" />;
+      case 'chevron-up':
+        return <polyline points="18 15 12 9 6 15" />;
       case 'search':
         return (
           <>

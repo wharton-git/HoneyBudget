@@ -187,9 +187,6 @@ export default component$(() => {
             <SvgIcon name="settings" size={22} class="text-amber-600" />
             <span>{t(lang, 'settings.title')}</span>
           </h2>
-          <p class="text-xs font-semibold text-slate-500 mt-0.5">
-            Préférences, devises et sauvegardes Google Drive
-          </p>
         </div>
       </div>
 
@@ -264,7 +261,7 @@ export default component$(() => {
 
         <div>
           <label class="block text-xs font-bold text-amber-900 mb-1">
-            {t(lang, 'currency.base_currency')} (pour le solde total et les budgets)
+            {t(lang, 'currency.base_currency')}
           </label>
           <select
             value={state.baseCurrency}
@@ -289,17 +286,9 @@ export default component$(() => {
             <span>{t(lang, 'settings.convert_budgets')}</span>
           </button>
         </div>
-
-        <div class="bg-amber-50/60 rounded-2xl p-3 border border-amber-100 text-xs font-semibold text-amber-900">
-          <p>{t(lang, 'currency.rate_info')}</p>
-          <p class="text-[11px] text-amber-700/80 mt-1">
-            {t(lang, 'currency.offline_warning')}
-          </p>
-        </div>
       </div>
 
-
-      {/* 3. Google Drive Backup & Restore (Zero GCP) */}
+      {/* 3. Google Drive Backup & Restore */}
       <div class="bg-white rounded-3xl p-5 border-2 border-amber-100 shadow-xs space-y-4">
         <div class="flex items-center justify-between">
           <h3 class="text-sm font-black text-amber-950 flex items-center gap-2">
@@ -311,53 +300,22 @@ export default component$(() => {
           </span>
         </div>
 
-        <p class="text-xs font-semibold text-slate-600 leading-relaxed">
-          {t(lang, 'backup.desc')}
-        </p>
-
-        {/* Zero GCP explanation cards */}
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div class="bg-amber-50/40 rounded-2xl p-3.5 border border-amber-100 space-y-1">
-            <div class="text-xs font-black text-amber-950 flex items-center gap-1.5">
-              <SvgIcon name="home" size={14} class="text-amber-700" />
-              <span>Sur Ordinateur (PC / Mac)</span>
-            </div>
-            <p class="text-[11px] text-slate-600">
-              {t(lang, 'backup.desktop_instruction')}
-            </p>
-          </div>
-
-          <div class="bg-amber-50/40 rounded-2xl p-3.5 border border-amber-100 space-y-1">
-            <div class="text-xs font-black text-amber-950 flex items-center gap-1.5">
-              <SvgIcon name="bus" size={14} class="text-amber-700" />
-              <span>Sur Smartphone (Android / iOS)</span>
-            </div>
-            <p class="text-[11px] text-slate-600">
-              {t(lang, 'backup.mobile_instruction')}
-            </p>
-          </div>
-        </div>
-
-        {/* Optional Password Encryption */}
-        <div class="pt-2 border-t border-amber-50 space-y-2">
-          <div class="flex items-center gap-1.5 text-xs font-black text-amber-950">
-            <SvgIcon name="shield" size={14} class="text-amber-700" />
-            <span>{t(lang, 'backup.encryption_title')}</span>
-          </div>
-          <p class="text-[11px] text-slate-500">
-            {t(lang, 'backup.encryption_desc')}
-          </p>
+        {/* Password Encryption */}
+        <div class="space-y-1.5">
+          <label class="block text-xs font-bold text-amber-900">
+            {t(lang, 'backup.passphrase')}
+          </label>
           <input
             type="password"
             value={state.passphrase}
             onInput$={(e: any) => (state.passphrase = e.target.value)}
             placeholder={t(lang, 'backup.passphrase_placeholder')}
-            class="w-full text-xs font-semibold text-slate-800 px-3.5 py-2 rounded-2xl border-2 border-amber-200 focus:border-amber-400 focus:outline-none bg-amber-50/20"
+            class="w-full text-xs font-semibold text-slate-800 px-3.5 py-2.5 rounded-2xl border-2 border-amber-200 focus:border-amber-400 focus:outline-none bg-amber-50/20"
           />
         </div>
 
         {/* Buttons Export and Import */}
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           <button
             type="button"
             onClick$={handleSaveToDrive$}
@@ -380,20 +338,12 @@ export default component$(() => {
         </div>
 
         {/* Reload data.csv */}
-        <div class="pt-3 border-t border-amber-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <div class="text-xs font-black text-amber-950 flex items-center gap-1.5">
-              <SvgIcon name="refresh" size={14} class="text-amber-600" />
-              <span>Données Réelles (data.csv)</span>
-            </div>
-            <p class="text-[11px] text-slate-500">
-              474 opérations réelles et 5 comptes (Cash, Mvola, Orange Money...)
-            </p>
-          </div>
+        <div class="pt-3 border-t border-amber-100 flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-600">Réinitialisation</span>
           <button
             type="button"
             onClick$={handleReloadRealData$}
-            class="px-4 py-2 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+            class="px-3.5 py-2 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold text-xs transition-colors cursor-pointer flex items-center gap-1.5"
           >
             <SvgIcon name="refresh" size={13} />
             <span>Recharger data.csv</span>
@@ -401,16 +351,11 @@ export default component$(() => {
         </div>
       </div>
 
-
-
       {/* 4. About HoneyBudget */}
-      <div class="bg-amber-50/50 rounded-3xl p-5 border-2 border-amber-200/60 flex items-center gap-4">
-        <HoneyMascotSvg size={48} class="shrink-0" />
-        <div class="space-y-1">
-          <h4 class="text-xs font-black text-amber-950">{t(lang, 'settings.about_title')}</h4>
-          <p class="text-[11px] font-medium text-amber-800/80 leading-relaxed">
-            {t(lang, 'settings.about_desc')}
-          </p>
+      <div class="bg-amber-50/50 rounded-3xl p-4 border border-amber-200/60 flex items-center gap-3">
+        <HoneyMascotSvg size={36} class="shrink-0" />
+        <div class="text-xs font-bold text-amber-950">
+          HoneyBudget • 100% PWA & Sécurisé
         </div>
       </div>
 

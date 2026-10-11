@@ -1,5 +1,6 @@
 import { component$, useStore, $, useVisibleTask$, type PropFunction } from '@builder.io/qwik';
 import { SvgIcon } from '../icons/SvgIcon';
+import { ConcentricClockModal } from './ConcentricClockModal';
 
 const MONTH_NAMES_FR = [
   'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
@@ -62,6 +63,7 @@ export const HoneyDateTimePicker = component$<HoneyDateTimePickerProps>(({ value
 
   const state = useStore({
     isOpen: false,
+    isTimeModalOpen: false,
     selectedDate: initial.selectedDate,
     viewYear: initial.viewYear,
     viewMonth: initial.viewMonth,
@@ -156,20 +158,6 @@ export const HoneyDateTimePicker = component$<HoneyDateTimePickerProps>(({ value
     onChange$(state.selectedDate);
   });
 
-  const handleHourChange$ = $((newHour: string) => {
-    state.hour = newHour;
-    const m = state.minute || '00';
-    state.minute = m;
-    emitChange$(state.selectedDate, newHour, m);
-  });
-
-  const handleMinuteChange$ = $((newMinute: string) => {
-    state.minute = newMinute;
-    const h = state.hour || '12';
-    state.hour = h;
-    emitChange$(state.selectedDate, h, newMinute);
-  });
-
   // Calculate calendar grid for state.viewYear and state.viewMonth
   const daysInCurrentMonth = new Date(state.viewYear, state.viewMonth + 1, 0).getDate();
   const daysInPrevMonth = new Date(state.viewYear, state.viewMonth, 0).getDate();
@@ -226,41 +214,49 @@ export const HoneyDateTimePicker = component$<HoneyDateTimePickerProps>(({ value
         </span>
       </div>
 
-      {/* Trigger button */}
-      <button
-        type="button"
-        onClick$={() => (state.isOpen = !state.isOpen)}
-        class={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl border-2 transition-all cursor-pointer text-left ${
-          state.isOpen
-            ? 'border-amber-400 bg-amber-50/60 shadow-sm'
-            : 'border-amber-200 bg-white hover:border-amber-300'
-        }`}
-      >
-        <div class="flex items-center gap-2.5">
-          <div class="w-7 h-7 rounded-xl bg-amber-100 flex items-center justify-center text-amber-800">
-            <SvgIcon name="calendar" size={15} />
-          </div>
-          <div>
-            <div class="text-xs font-black text-amber-950 flex items-center gap-1.5">
-              <span>{dateLabel}</span>
-              <span class="text-slate-400">•</span>
-              <span class="text-amber-800 font-bold">{state.selectedDate}</span>
+      {/* Trigger buttons: Date and Time */}
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          onClick$={() => (state.isOpen = !state.isOpen)}
+          class={`flex-1 flex items-center justify-between px-3.5 py-2.5 rounded-2xl border-2 transition-all cursor-pointer text-left ${
+            state.isOpen
+              ? 'border-amber-400 bg-amber-50/60 shadow-sm'
+              : 'border-amber-200 bg-white hover:border-amber-300'
+          }`}
+        >
+          <div class="flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-xl bg-amber-100 flex items-center justify-center text-amber-800">
+              <SvgIcon name="calendar" size={15} />
+            </div>
+            <div>
+              <div class="text-xs font-black text-amber-950 flex items-center gap-1.5">
+                <span>{dateLabel}</span>
+                <span class="text-slate-400">•</span>
+                <span class="text-amber-800 font-bold">{state.selectedDate}</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="flex items-center gap-2">
-          <div class="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-100/70 text-amber-950 text-xs font-bold">
-            <SvgIcon name="clock" size={13} class="text-amber-700" />
-            <span>{timeLabel}</span>
-          </div>
           <SvgIcon
             name={state.isOpen ? 'chevron-up' : 'chevron-down'}
             size={14}
             class="text-amber-700"
           />
-        </div>
-      </button>
+        </button>
+
+        <button
+          type="button"
+          onClick$={() => (state.isTimeModalOpen = true)}
+          class="flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl border-2 border-amber-200 bg-white hover:border-amber-400 hover:bg-amber-50/60 text-amber-950 transition-all cursor-pointer shadow-2xs"
+          title="Sélectionner l'heure (double cadran concentrique)"
+        >
+          <div class="w-6 h-6 rounded-lg bg-amber-100 flex items-center justify-center text-amber-800">
+            <SvgIcon name="clock" size={14} />
+          </div>
+          <span class="text-xs font-black tracking-tight">{timeLabel}</span>
+        </button>
+      </div>
 
       {/* Popover / Expandable Honey Calendar */}
       {state.isOpen && (
@@ -397,14 +393,14 @@ export const HoneyDateTimePicker = component$<HoneyDateTimePickerProps>(({ value
                 <button
                   type="button"
                   onClick$={() => handleSetPresetTime$('12', '00')}
-                  class="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200"
+                  class="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 cursor-pointer"
                 >
                   12:00
                 </button>
                 <button
                   type="button"
                   onClick$={() => handleSetPresetTime$('19', '00')}
-                  class="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200"
+                  class="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 cursor-pointer"
                 >
                   19:00
                 </button>
@@ -412,7 +408,7 @@ export const HoneyDateTimePicker = component$<HoneyDateTimePickerProps>(({ value
                   <button
                     type="button"
                     onClick$={handleClearTime$}
-                    class="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200"
+                    class="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 cursor-pointer"
                   >
                     Effacer
                   </button>
@@ -420,59 +416,58 @@ export const HoneyDateTimePicker = component$<HoneyDateTimePickerProps>(({ value
               </div>
             </div>
 
+            {/* Interactive Clock Modal Trigger Bar */}
             <div class="flex items-center gap-2">
-              <div class="flex-1 flex items-center justify-center gap-2 bg-amber-50/50 p-2 rounded-2xl border border-amber-200">
-                <div class="flex items-center gap-1">
-                  <span class="text-[11px] font-bold text-amber-900">H :</span>
-                  <select
-                    value={state.hour || '12'}
-                    onChange$={(e: any) => handleHourChange$(e.target.value)}
-                    class="text-xs font-black text-amber-950 bg-white border border-amber-200 rounded-xl px-2.5 py-1 focus:outline-none focus:border-amber-400 cursor-pointer"
-                  >
-                    {Array.from({ length: 24 }).map((_, i) => {
-                      const hStr = String(i).padStart(2, '0');
-                      return (
-                        <option key={hStr} value={hStr}>
-                          {`${hStr} h`}
-                        </option>
-                      );
-                    })}
-                  </select>
+              <button
+                type="button"
+                onClick$={() => (state.isTimeModalOpen = true)}
+                class="flex-1 flex items-center justify-between p-2.5 rounded-2xl bg-amber-50/70 hover:bg-amber-100/70 border-2 border-amber-200 text-amber-950 transition-all cursor-pointer group text-left"
+              >
+                <div class="flex items-center gap-2.5">
+                  <div class="w-7 h-7 rounded-xl bg-amber-200 text-amber-900 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <SvgIcon name="clock" size={15} />
+                  </div>
+                  <div>
+                    <span class="text-xs font-black text-amber-950 block">
+                      {state.hour && state.minute ? `${state.hour}:${state.minute}` : '12:00'}
+                    </span>
+                    <span class="text-[9px] font-bold text-amber-800/80 block">
+                      Double cadran (0-23h / 0-59m)
+                    </span>
+                  </div>
                 </div>
 
-                <span class="font-black text-amber-700">:</span>
-
-                <div class="flex items-center gap-1">
-                  <span class="text-[11px] font-bold text-amber-900">Min :</span>
-                  <select
-                    value={state.minute || '00'}
-                    onChange$={(e: any) => handleMinuteChange$(e.target.value)}
-                    class="text-xs font-black text-amber-950 bg-white border border-amber-200 rounded-xl px-2.5 py-1 focus:outline-none focus:border-amber-400 cursor-pointer"
-                  >
-                    {Array.from({ length: 60 }).map((_, i) => {
-                      const mStr = String(i).padStart(2, '0');
-                      return (
-                        <option key={mStr} value={mStr}>
-                          {`${mStr} min`}
-                        </option>
-                      );
-                    })}
-                  </select>
+                <div class="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-400 text-amber-950 text-[11px] font-black shadow-xs">
+                  <span>Modifier</span>
+                  <SvgIcon name="chevron-right" size={12} />
                 </div>
-              </div>
+              </button>
 
               <button
                 type="button"
                 onClick$={() => (state.isOpen = false)}
-                class="px-3.5 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-xs shadow-xs active:scale-95 transition-all cursor-pointer flex items-center gap-1"
+                class="px-3.5 py-3 rounded-2xl bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-xs shadow-xs active:scale-95 transition-all cursor-pointer flex items-center gap-1 self-stretch"
               >
-                <SvgIcon name="check" size={13} />
+                <SvgIcon name="check" size={14} />
                 <span>OK</span>
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Concentric Clock Modal (2 circles: Hours 0-23 inside, Minutes 0-59 outside) */}
+      <ConcentricClockModal
+        isOpen={state.isTimeModalOpen}
+        initialHour={state.hour || '12'}
+        initialMinute={state.minute || '00'}
+        onClose$={$(() => (state.isTimeModalOpen = false))}
+        onSelect$={$((h: string, m: string) => {
+          state.hour = h;
+          state.minute = m;
+          emitChange$(state.selectedDate, h, m);
+        })}
+      />
     </div>
   );
 });

@@ -21,7 +21,7 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
     minute: 0,
     period: 'PM' as 'AM' | 'PM',
     activeUnit: 'hour' as 'hour' | 'minute',
-    minuteStepMode: 'step5' as 'step5' | 'step1', // snap to multiples of 5 or 1-minute exact
+    minuteStepMode: 'step5' as 'step5' | 'step1',
     isDragging: false,
     dragTarget: 'hour' as 'hour' | 'minute',
   });
@@ -34,13 +34,13 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
     const parsedH = parseInt(initialHour, 10);
     const parsedM = parseInt(initialMinute, 10);
 
-    const safeH = isNaN(parsedH) ? 12 : (parsedH % 24 + 24) % 24;
+    const safeH = isNaN(parsedH) ? 12 : ((parsedH % 24) + 24) % 24;
     state.period = safeH >= 12 ? 'PM' : 'AM';
     let h12 = safeH % 12;
     if (h12 === 0) h12 = 12;
     state.hour12 = h12;
 
-    state.minute = isNaN(parsedM) ? 0 : (parsedM % 60 + 60) % 60;
+    state.minute = isNaN(parsedM) ? 0 : ((parsedM % 60) + 60) % 60;
     state.activeUnit = 'hour';
     state.isDragging = false;
   });
@@ -169,81 +169,70 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
 
   return (
     <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-amber-950/45 backdrop-blur-xs animate-in fade-in">
-      <div class="bg-white rounded-3xl border-2 border-amber-200 shadow-2xl max-w-sm w-full p-4 sm:p-5 space-y-4">
-        {/* Header */}
+      <div class="bg-white rounded-3xl border-2 border-amber-200 shadow-2xl max-w-sm w-full p-5 sm:p-6 space-y-4">
+        {/* Header - Simple & Clean */}
         <div class="flex items-center justify-between pb-2 border-b border-amber-100">
-          <div class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-900 flex items-center justify-center">
-              <SvgIcon name="clock" size={16} />
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center shadow-2xs">
+              <SvgIcon name="clock" size={18} />
             </div>
-            <div>
-              <h3 class="text-sm font-black text-amber-950 leading-tight">
-                Sélection de l'heure
-              </h3>
-              <span class="text-[10px] font-semibold text-slate-500">
-                12 Heures (AM/PM) & Minutes
-              </span>
-            </div>
+            <h3 class="text-base font-black text-amber-950">
+              Heure
+            </h3>
           </div>
 
           <button
             type="button"
             onClick$={onClose$}
-            class="p-1.5 rounded-full hover:bg-amber-100 text-amber-800 transition-colors cursor-pointer"
+            class="p-2 rounded-full hover:bg-amber-100 text-amber-800 transition-colors cursor-pointer"
             title="Fermer"
           >
-            <SvgIcon name="x" size={16} />
+            <SvgIcon name="x" size={18} />
           </button>
         </div>
 
-        {/* Digital Readout + AM/PM Switch */}
+        {/* Digital Readout & AM/PM Toggle - Large & Prominent Buttons */}
         <div class="flex items-center justify-center gap-3 py-1">
-          {/* Hour (1-12) */}
+          {/* Hour Button (1-12) */}
           <button
             type="button"
             onClick$={() => (state.activeUnit = 'hour')}
-            class={`px-3.5 py-2 rounded-2xl border-2 transition-all cursor-pointer text-center ${
+            class={`px-5 py-3 rounded-2xl border-2 transition-all cursor-pointer text-center ${
               state.activeUnit === 'hour'
-                ? 'bg-amber-400 text-amber-950 border-amber-500 font-black shadow-xs ring-2 ring-amber-300'
-                : 'bg-amber-50/70 text-amber-900 border-amber-200 font-bold hover:bg-amber-100'
+                ? 'bg-amber-400 text-amber-950 border-amber-500 shadow-md ring-2 ring-amber-300'
+                : 'bg-amber-50/80 text-amber-900 border-amber-200 hover:bg-amber-100'
             }`}
           >
-            <span class="text-2xl font-black block tracking-tight">
+            <span class="text-3xl font-black block tracking-tight">
               {String(state.hour12).padStart(2, '0')}
-            </span>
-            <span class="text-[9px] uppercase tracking-wider block font-bold text-amber-900/80">
-              Heure (1-12)
             </span>
           </button>
 
-          <span class="text-2xl font-black text-amber-900 pb-3">:</span>
+          <span class="text-3xl font-black text-amber-900">:</span>
 
-          {/* Minute (0-59) */}
+          {/* Minute Button (0-59) */}
           <button
             type="button"
             onClick$={() => (state.activeUnit = 'minute')}
-            class={`px-3.5 py-2 rounded-2xl border-2 transition-all cursor-pointer text-center ${
+            class={`px-5 py-3 rounded-2xl border-2 transition-all cursor-pointer text-center ${
               state.activeUnit === 'minute'
-                ? 'bg-amber-500 text-white border-amber-600 font-black shadow-xs ring-2 ring-amber-300'
-                : 'bg-amber-50/70 text-amber-900 border-amber-200 font-bold hover:bg-amber-100'
+                ? 'bg-amber-500 text-white border-amber-600 shadow-md ring-2 ring-amber-300'
+                : 'bg-amber-50/80 text-amber-900 border-amber-200 hover:bg-amber-100'
             }`}
           >
-            <span class="text-2xl font-black block tracking-tight">
+            <span class="text-3xl font-black block tracking-tight">
               {String(state.minute).padStart(2, '0')}
-            </span>
-            <span class="text-[9px] uppercase tracking-wider block font-bold text-amber-900/80">
-              Minute (0-59)
             </span>
           </button>
 
-          {/* AM / PM Segmented Toggle */}
-          <div class="flex flex-col gap-1 p-1 bg-amber-100/70 rounded-2xl border border-amber-200">
+          {/* AM / PM Segmented Switch - Generous Click Targets */}
+          <div class="flex flex-col gap-1.5 p-1 bg-amber-100/70 rounded-2xl border border-amber-200">
             <button
               type="button"
               onClick$={() => (state.period = 'AM')}
-              class={`px-3 py-1 text-xs font-black rounded-xl transition-all cursor-pointer ${
+              class={`px-3.5 py-1.5 text-xs font-black rounded-xl transition-all cursor-pointer ${
                 state.period === 'AM'
-                  ? 'bg-amber-400 text-amber-950 shadow-xs font-black'
+                  ? 'bg-amber-400 text-amber-950 shadow-xs ring-1 ring-amber-400'
                   : 'text-amber-800 hover:text-amber-950'
               }`}
             >
@@ -252,9 +241,9 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
             <button
               type="button"
               onClick$={() => (state.period = 'PM')}
-              class={`px-3 py-1 text-xs font-black rounded-xl transition-all cursor-pointer ${
+              class={`px-3.5 py-1.5 text-xs font-black rounded-xl transition-all cursor-pointer ${
                 state.period === 'PM'
-                  ? 'bg-amber-500 text-white shadow-xs font-black'
+                  ? 'bg-amber-500 text-white shadow-xs ring-1 ring-amber-500'
                   : 'text-amber-800 hover:text-amber-950'
               }`}
             >
@@ -263,34 +252,34 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
           </div>
         </div>
 
-        {/* Minute Selection Precision Toggle */}
+        {/* Minute Precision Mode Toggle - Enlarged Buttons */}
         <div class="flex items-center justify-center p-1 bg-amber-100/60 rounded-2xl border border-amber-200 text-xs">
           <button
             type="button"
             onClick$={() => (state.minuteStepMode = 'step5')}
-            class={`flex-1 py-1.5 px-2 rounded-xl font-bold transition-all cursor-pointer text-center text-[11px] ${
+            class={`flex-1 py-2 px-3 rounded-xl font-bold transition-all cursor-pointer text-center text-xs ${
               state.minuteStepMode === 'step5'
                 ? 'bg-white text-amber-950 shadow-2xs font-black'
                 : 'text-amber-800 hover:text-amber-950'
             }`}
           >
-            Multiples de 5 (0, 5, 10...)
+            Par 5 min
           </button>
           <button
             type="button"
             onClick$={() => (state.minuteStepMode = 'step1')}
-            class={`flex-1 py-1.5 px-2 rounded-xl font-bold transition-all cursor-pointer text-center text-[11px] ${
+            class={`flex-1 py-2 px-3 rounded-xl font-bold transition-all cursor-pointer text-center text-xs ${
               state.minuteStepMode === 'step1'
                 ? 'bg-white text-amber-950 shadow-2xs font-black'
                 : 'text-amber-800 hover:text-amber-950'
             }`}
           >
-            Toutes les minutes (1-59)
+            Par 1 min
           </button>
         </div>
 
         {/* Concentric Clock SVG Dial */}
-        <div class="relative w-full max-w-[290px] sm:max-w-[310px] mx-auto select-none touch-none">
+        <div class="relative w-full max-w-[300px] sm:max-w-[320px] mx-auto select-none touch-none">
           <svg
             viewBox="0 0 340 340"
             class="w-full h-auto cursor-pointer"
@@ -378,7 +367,7 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
               x2={minX}
               y2={minY}
               stroke="#D97706"
-              stroke-width={state.activeUnit === 'minute' ? 3 : 2}
+              stroke-width={state.activeUnit === 'minute' ? 3.5 : 2.5}
               stroke-linecap="round"
               stroke-dasharray={state.activeUnit === 'minute' ? undefined : '3 3'}
             />
@@ -390,29 +379,29 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
               x2={hourX}
               y2={hourY}
               stroke="#F59E0B"
-              stroke-width={state.activeUnit === 'hour' ? 4 : 3}
+              stroke-width={state.activeUnit === 'hour' ? 4.5 : 3.5}
               stroke-linecap="round"
             />
 
             {/* Center pin decoration */}
-            <circle cx={cx} cy={cy} r={7} fill="#78350F" />
+            <circle cx={cx} cy={cy} r={7.5} fill="#78350F" />
             <circle cx={cx} cy={cy} r={3} fill="#FFFDF7" />
 
             {/* Selected Minute Target Badge */}
             <circle
               cx={minX}
               cy={minY}
-              r={12}
+              r={13.5}
               fill="#D97706"
               stroke="#FFFFFF"
-              stroke-width="1.5"
+              stroke-width="1.8"
             />
             <text
               x={minX}
               y={minY}
               text-anchor="middle"
               dominant-baseline="central"
-              font-size="10"
+              font-size="11"
               font-weight="900"
               fill="#FFFFFF"
             >
@@ -421,7 +410,7 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
 
             {/* Outer Circle (Minutes: Multiples of 5) */}
             {minuteMultiples.map((m) => {
-              if (m.minute === state.minute) return null; // already rendered by selected badge
+              if (m.minute === state.minute) return null;
               return (
                 <g
                   key={`m-${m.minute}`}
@@ -434,7 +423,7 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
                   <circle
                     cx={m.x}
                     cy={m.y}
-                    r={11}
+                    r={14}
                     fill="transparent"
                   />
                   <text
@@ -442,7 +431,7 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
                     y={m.y}
                     text-anchor="middle"
                     dominant-baseline="central"
-                    font-size="10.5"
+                    font-size="11"
                     font-weight="700"
                     fill="#92400E"
                   >
@@ -456,17 +445,17 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
             <circle
               cx={hourX}
               cy={hourY}
-              r={12}
+              r={13.5}
               fill="#F59E0B"
               stroke="#451A03"
-              stroke-width="1.2"
+              stroke-width="1.5"
             />
             <text
               x={hourX}
               y={hourY}
               text-anchor="middle"
               dominant-baseline="central"
-              font-size="11"
+              font-size="12"
               font-weight="900"
               fill="#451A03"
             >
@@ -475,7 +464,7 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
 
             {/* Inner Circle (12 Hours: 1 to 12) */}
             {hours12List.map((h) => {
-              if (h.hour === state.hour12) return null; // already rendered by selected badge
+              if (h.hour === state.hour12) return null;
               return (
                 <g
                   key={`h-${h.hour}`}
@@ -488,7 +477,7 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
                   <circle
                     cx={h.x}
                     cy={h.y}
-                    r={11}
+                    r={14}
                     fill="transparent"
                   />
                   <text
@@ -496,7 +485,7 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
                     y={h.y}
                     text-anchor="middle"
                     dominant-baseline="central"
-                    font-size="11"
+                    font-size="12"
                     font-weight="800"
                     fill="#78350F"
                   >
@@ -508,74 +497,21 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
           </svg>
         </div>
 
-        {/* Legend describing the two concentric circles */}
-        <div class="grid grid-cols-2 gap-2 text-[10px] font-bold">
-          <div class="flex items-center justify-center gap-1.5 p-1.5 rounded-xl bg-amber-50 text-amber-950 border border-amber-200">
-            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-500 shrink-0"></span>
-            <span>1er cercle : 12 Heures</span>
-          </div>
+        {/* Quick Steppers & Preset - Larger, comfortable buttons */}
+        <div class="flex items-center justify-between gap-2 pt-1">
+          <button
+            type="button"
+            onClick$={handleSetNow$}
+            class="px-4 py-2.5 text-xs font-black rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 transition-colors cursor-pointer"
+          >
+            Maintenant
+          </button>
 
-          <div class="flex items-center justify-center gap-1.5 p-1.5 rounded-xl bg-amber-50 text-amber-950 border border-amber-200">
-            <span class="w-2.5 h-2.5 rounded-full bg-amber-600 border border-amber-700 shrink-0"></span>
-            <span>2nd cercle : Minutes (0-59)</span>
-          </div>
-        </div>
-
-        {/* Presets and Steppers */}
-        <div class="flex items-center justify-between gap-1 pt-1">
-          <div class="flex items-center gap-1 flex-wrap">
-            <button
-              type="button"
-              onClick$={handleSetNow$}
-              class="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 cursor-pointer"
-            >
-              Maintenant
-            </button>
-            <button
-              type="button"
-              onClick$={() => {
-                state.hour12 = 12;
-                state.minute = 0;
-                state.period = 'PM';
-              }}
-              class="px-2 py-1 text-[11px] font-bold rounded-lg bg-white hover:bg-amber-50 text-amber-900 border border-amber-200 cursor-pointer"
-            >
-              12:00 PM
-            </button>
-            <button
-              type="button"
-              onClick$={() => {
-                state.hour12 = 7;
-                state.minute = 0;
-                state.period = 'PM';
-              }}
-              class="px-2 py-1 text-[11px] font-bold rounded-lg bg-white hover:bg-amber-50 text-amber-900 border border-amber-200 cursor-pointer"
-            >
-              07:00 PM
-            </button>
-          </div>
-
-          <div class="flex items-center gap-1">
-            <button
-              type="button"
-              onClick$={() => (state.minute = (state.minute - 1 + 60) % 60)}
-              class="px-1.5 py-1 text-[10px] font-bold rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 cursor-pointer"
-              title="-1 minute"
-            >
-              -1m
-            </button>
-            <button
-              type="button"
-              onClick$={() => (state.minute = (state.minute + 1) % 60)}
-              class="px-1.5 py-1 text-[10px] font-bold rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 cursor-pointer"
-              title="+1 minute"
-            >
-              +1m
-            </button>
+          <div class="flex items-center gap-1.5">
             <button
               type="button"
               onClick$={() => (state.minute = (state.minute - 5 + 60) % 60)}
-              class="px-1.5 py-1 text-[10px] font-bold rounded-lg bg-amber-200/80 hover:bg-amber-300 text-amber-950 cursor-pointer"
+              class="px-3 py-2 text-xs font-black rounded-xl bg-amber-100/90 hover:bg-amber-200 text-amber-950 cursor-pointer transition-colors"
               title="-5 minutes"
             >
               -5m
@@ -583,20 +519,36 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
             <button
               type="button"
               onClick$={() => (state.minute = (state.minute + 5) % 60)}
-              class="px-1.5 py-1 text-[10px] font-bold rounded-lg bg-amber-200/80 hover:bg-amber-300 text-amber-950 cursor-pointer"
+              class="px-3 py-2 text-xs font-black rounded-xl bg-amber-100/90 hover:bg-amber-200 text-amber-950 cursor-pointer transition-colors"
               title="+5 minutes"
             >
               +5m
             </button>
+            <button
+              type="button"
+              onClick$={() => (state.minute = (state.minute - 1 + 60) % 60)}
+              class="px-2.5 py-2 text-xs font-black rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-200 cursor-pointer transition-colors"
+              title="-1 minute"
+            >
+              -1m
+            </button>
+            <button
+              type="button"
+              onClick$={() => (state.minute = (state.minute + 1) % 60)}
+              class="px-2.5 py-2 text-xs font-black rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-200 cursor-pointer transition-colors"
+              title="+1 minute"
+            >
+              +1m
+            </button>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div class="flex items-center justify-end gap-2 pt-3 border-t border-amber-100">
+        {/* Action Buttons - Enlarged & Generous */}
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-amber-100">
           <button
             type="button"
             onClick$={onClose$}
-            class="px-4 py-2 text-xs font-bold rounded-xl text-amber-800 hover:bg-amber-100 transition-colors cursor-pointer"
+            class="px-5 py-2.5 text-xs font-bold rounded-2xl text-amber-800 hover:bg-amber-100 transition-colors cursor-pointer"
           >
             Annuler
           </button>
@@ -604,10 +556,10 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
           <button
             type="button"
             onClick$={handleConfirm$}
-            class="px-5 py-2.5 text-xs font-black rounded-xl bg-amber-400 hover:bg-amber-500 text-amber-950 shadow-md active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+            class="px-6 py-3 text-xs font-black rounded-2xl bg-amber-400 hover:bg-amber-500 text-amber-950 shadow-md active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
           >
-            <SvgIcon name="check" size={14} />
-            <span>Valider l'heure</span>
+            <SvgIcon name="check" size={16} />
+            <span>Valider</span>
           </button>
         </div>
       </div>

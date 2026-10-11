@@ -438,21 +438,18 @@ export const HoneyDateTimePicker = component$<HoneyDateTimePickerProps>(({ value
                 class="flex-1 flex items-center justify-between p-2.5 rounded-2xl bg-amber-50/70 hover:bg-amber-100/70 border-2 border-amber-200 text-amber-950 transition-all cursor-pointer group text-left"
               >
                 <div class="flex items-center gap-2.5">
-                  <div class="w-7 h-7 rounded-xl bg-amber-200 text-amber-900 flex items-center justify-center group-hover:scale-105 transition-transform">
-                    <SvgIcon name="clock" size={15} />
+                  <div class="w-8 h-8 rounded-xl bg-amber-200 text-amber-900 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <SvgIcon name="clock" size={16} />
                   </div>
                   <div>
-                    <span class="text-xs font-black text-amber-950 block">
+                    <span class="text-sm font-black text-amber-950 block">
                       {state.hour && state.minute ? formatTimeAmPm(`${state.hour}:${state.minute}`) : '12:00 PM'}
-                    </span>
-                    <span class="text-[9px] font-bold text-amber-800/80 block">
-                      Cadran 12h (AM/PM) & Minutes
                     </span>
                   </div>
                 </div>
 
-                <div class="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-400 text-amber-950 text-[11px] font-black shadow-xs">
-                  <span>Modifier</span>
+                <div class="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-400 text-amber-950 text-xs font-black shadow-xs">
+                  <span>Régler</span>
                   <SvgIcon name="chevron-right" size={12} />
                 </div>
               </button>

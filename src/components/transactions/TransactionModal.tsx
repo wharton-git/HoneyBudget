@@ -299,16 +299,15 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
         </div>
 
         {/* Type selector pill buttons */}
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 p-1 bg-amber-50 rounded-2xl border border-amber-200">
+        <div class="grid grid-cols-3 gap-2 mt-4 p-1 bg-amber-50 rounded-2xl border border-amber-200">
           <button
             type="button"
             onClick$={() => {
               state.type = 'expense';
-              state.isGroup = false;
             }}
             class={`py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-              state.type === 'expense' && !state.isGroup
-                ? 'bg-rose-500 text-white shadow-xs'
+              state.type === 'expense'
+                ? 'bg-rose-500 text-white shadow-xs font-black'
                 : 'text-amber-900 hover:bg-amber-100/60'
             }`}
           >
@@ -319,33 +318,12 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
           <button
             type="button"
             onClick$={() => {
-              state.type = 'expense';
-              state.isGroup = true;
-              if (state.groupItems.length === 0) {
-                state.groupItems = [
-                  { id: '1', name: state.label || '', amount: state.amount || '', quantity: '1' },
-                ];
-              }
-            }}
-            class={`py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-              state.isGroup
-                ? 'bg-amber-500 text-white shadow-xs'
-                : 'text-amber-900 hover:bg-amber-100/60'
-            }`}
-          >
-            <SvgIcon name="tag" size={14} />
-            <span>Achat Groupé</span>
-          </button>
-
-          <button
-            type="button"
-            onClick$={() => {
               state.type = 'income';
               state.isGroup = false;
             }}
             class={`py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-              state.type === 'income' && !state.isGroup
-                ? 'bg-emerald-500 text-white shadow-xs'
+              state.type === 'income'
+                ? 'bg-emerald-500 text-white shadow-xs font-black'
                 : 'text-amber-900 hover:bg-amber-100/60'
             }`}
           >
@@ -360,8 +338,8 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
               state.isGroup = false;
             }}
             class={`py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-              state.type === 'transfer' && !state.isGroup
-                ? 'bg-sky-500 text-white shadow-xs'
+              state.type === 'transfer'
+                ? 'bg-sky-500 text-white shadow-xs font-black'
                 : 'text-amber-900 hover:bg-amber-100/60'
             }`}
           >
@@ -372,7 +350,45 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
 
         {/* Form */}
         <div class="space-y-4 mt-5">
-          {state.isGroup ? (
+          {/* Sub-toggle inside Expense: Achat individuel vs Achat groupé */}
+          {state.type === 'expense' && (
+            <div class="flex items-center p-1 bg-amber-100/70 rounded-2xl border border-amber-200">
+              <button
+                type="button"
+                onClick$={() => (state.isGroup = false)}
+                class={`flex-1 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  !state.isGroup
+                    ? 'bg-white text-amber-950 shadow-xs font-black'
+                    : 'text-amber-800 hover:text-amber-950'
+                }`}
+              >
+                <SvgIcon name="coin" size={13} class="text-amber-600" />
+                <span>Achat individuel</span>
+              </button>
+
+              <button
+                type="button"
+                onClick$={() => {
+                  state.isGroup = true;
+                  if (state.groupItems.length === 0) {
+                    state.groupItems = [
+                      { id: '1', name: state.label || '', amount: state.amount || '', quantity: '1' },
+                    ];
+                  }
+                }}
+                class={`flex-1 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  state.isGroup
+                    ? 'bg-amber-400 text-amber-950 shadow-xs font-black'
+                    : 'text-amber-800 hover:text-amber-950'
+                }`}
+              >
+                <SvgIcon name="tag" size={13} class="text-amber-800" />
+                <span>Achat groupé (Panier)</span>
+              </button>
+            </div>
+          )}
+
+          {state.type === 'expense' && state.isGroup ? (
             <div class="space-y-3 p-3.5 bg-amber-50/50 rounded-3xl border-2 border-amber-200">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">

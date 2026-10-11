@@ -8,7 +8,7 @@ export const REAL_SETTINGS: AppSettingsRecord = {
   theme: 'honey-mga-real',
   rates: DEFAULT_RATES_FROM_EUR,
   lastRatesUpdate: new Date().toISOString(),
-  seedVersion: 3,
+  seedVersion: 4,
 };
 
 export const REAL_ACCOUNTS: Account[] = [
@@ -17,7 +17,7 @@ export const REAL_ACCOUNTS: Account[] = [
     "name": "Cash (Esp\u00e8ces)",
     "type": "cash",
     "currencyCode": "MGA",
-    "balance": 172700,
+    "balance": 170000,
     "color": "#F59E0B",
     "iconSvg": "wallet"
   },
@@ -26,7 +26,7 @@ export const REAL_ACCOUNTS: Account[] = [
     "name": "Mvola 2",
     "type": "checking",
     "currencyCode": "MGA",
-    "balance": 133650,
+    "balance": 158650,
     "color": "#10B981",
     "iconSvg": "coin"
   },
@@ -35,7 +35,7 @@ export const REAL_ACCOUNTS: Account[] = [
     "name": "Orange Money",
     "type": "checking",
     "currencyCode": "MGA",
-    "balance": 3790,
+    "balance": 1590,
     "color": "#F97316",
     "iconSvg": "vault"
   },
@@ -44,7 +44,7 @@ export const REAL_ACCOUNTS: Account[] = [
     "name": "Orange Money 2",
     "type": "savings",
     "currencyCode": "MGA",
-    "balance": 10000,
+    "balance": 0,
     "color": "#EC4899",
     "iconSvg": "honey-pot"
   },
@@ -53,7 +53,7 @@ export const REAL_ACCOUNTS: Account[] = [
     "name": "Redotpay",
     "type": "checking",
     "currencyCode": "USD",
-    "balance": 3.31,
+    "balance": 2.31,
     "color": "#8B5CF6",
     "iconSvg": "piggy"
   }
@@ -5274,6 +5274,130 @@ export const REAL_TRANSACTIONS: Transaction[] = [
     "date": "2026-10-09",
     "label": "Score",
     "notes": "Vin Blanc: 24 000 Ar, Gourde: 6 000 Ar, Achard Sakoa: 3 000 Ar (19:00)",
+    "type": "expense"
+  }
+,
+  {
+    "id": 484,
+    "accountId": 4,
+    "targetAccountId": 3,
+    "categoryId": 45,
+    "amount": 9800.0,
+    "date": "2026-10-09",
+    "label": "Transfert vers Orange Money",
+    "notes": "De Orange Money 2 (14:00)",
+    "type": "transfer"
+  },
+  {
+    "id": 485,
+    "accountId": 4,
+    "categoryId": 45,
+    "amount": 200.0,
+    "date": "2026-10-09",
+    "label": "Frais transfert OM 2",
+    "notes": "Frais transfert vers OM (14:00)",
+    "type": "expense"
+  },
+  {
+    "id": 486,
+    "accountId": 3,
+    "categoryId": 40,
+    "amount": 40000.0,
+    "date": "2026-10-09",
+    "label": "Reçu de Maman",
+    "notes": "Motif Forfait (21:00)",
+    "type": "income"
+  },
+  {
+    "id": 487,
+    "accountId": 1,
+    "categoryId": 8,
+    "amount": 600.0,
+    "date": "2026-10-10",
+    "label": "Bus 120",
+    "notes": "Analakely - Ivandry (11:00)",
+    "type": "expense"
+  },
+  {
+    "id": 488,
+    "accountId": 3,
+    "categoryId": 33,
+    "amount": 25000.0,
+    "date": "2026-10-10",
+    "label": "Super U Ivandry",
+    "notes": "Yao Framboise 5 000 Ar x2 (10 000 Ar), Chocolat noir 100% (15 000 Ar) (11:30)",
+    "type": "expense"
+  },
+  {
+    "id": 489,
+    "accountId": 1,
+    "categoryId": 5,
+    "amount": 9100.0,
+    "date": "2026-10-10",
+    "label": "Super U Analakely",
+    "notes": "Eau Volvic: 2 100 Ar, Sprite 1.5L: 4 000 Ar, Yaourt à boire Itty 1 000 Ar x3: 3 000 Ar (15:10)",
+    "type": "expense"
+  },
+  {
+    "id": 490,
+    "accountId": 3,
+    "targetAccountId": 1,
+    "categoryId": 45,
+    "amount": 27000.0,
+    "date": "2026-10-10",
+    "label": "Retrait vers Cash",
+    "notes": "Retrait Orange Money (17:20)",
+    "type": "transfer"
+  },
+  {
+    "id": 491,
+    "accountId": 1,
+    "categoryId": 31,
+    "amount": 20000.0,
+    "date": "2026-10-10",
+    "label": "Remboursement Finoana",
+    "notes": "Remboursement Finoana (17:22)",
+    "type": "expense"
+  },
+  {
+    "id": 492,
+    "accountId": 2,
+    "categoryId": 41,
+    "amount": 50000.0,
+    "date": "2026-10-10",
+    "label": "Reçu de Fenosoa",
+    "notes": "Reçu de Fenosoa (20:30)",
+    "type": "income"
+  },
+  {
+    "id": 493,
+    "accountId": 5,
+    "categoryId": 11,
+    "amount": 1.5,
+    "date": "2026-10-10",
+    "label": "Achat en ligne",
+    "notes": "Achat (1.50$) (20:45)",
+    "type": "expense"
+  },
+  {
+    "id": 494,
+    "accountId": 2,
+    "targetAccountId": 5,
+    "categoryId": 45,
+    "amount": 25000.0,
+    "date": "2026-10-10",
+    "label": "Transfert vers Redotpay",
+    "notes": "Reçu 5.00 $ sur Redotpay (1$ frais) (21:00)",
+    "type": "transfer"
+  },
+  {
+    "id": 495,
+    "accountId": 5,
+    "categoryId": 11,
+    "amount": 4.5,
+    "date": "2026-10-10",
+    "label": "Achat en ligne",
+    "notes": "Achat 1.50$ x3 (4.50$) (21:04)",
     "type": "expense"
   }
 ];

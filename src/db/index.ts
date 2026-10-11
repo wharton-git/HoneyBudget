@@ -80,8 +80,8 @@ export const initDatabase = async (forceReset: boolean = false) => {
   const currentSettings = await db.settings.get('current');
   const count = await db.accounts.count();
 
-  // If first run or if legacy test data detected (seedVersion !== 3)
-  if (forceReset || count === 0 || !currentSettings || currentSettings.seedVersion !== 3) {
+  // If first run or if legacy test data detected (seedVersion !== 4)
+  if (forceReset || count === 0 || !currentSettings || currentSettings.seedVersion !== 4) {
     const {
       REAL_SETTINGS,
       REAL_ACCOUNTS,

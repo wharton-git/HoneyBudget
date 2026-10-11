@@ -8,6 +8,7 @@ export const en: Translations = {
   'nav.accounts': 'Accounts',
   'nav.transactions': 'Transactions',
   'nav.categories': 'Budgets',
+  'nav.reports': 'Reports',
   'nav.settings': 'Settings',
   'common.cancel': 'Cancel',
   'common.confirm': 'Confirm',
@@ -128,5 +129,24 @@ export const en: Translations = {
   'settings.about_desc': 'Autonomous, secure, and privacy-first PWA. Your financial data stays exclusively on your device and inside your backups.',
   'settings.convert_budgets': 'Recalculate category budget limits to this currency',
   'settings.budgets_converted_success': 'Budget limits converted successfully!',
+
+  // Reports
+  'reports.title': 'Monthly Reports',
+  'reports.subtitle': 'Analyze your finances and visualize your cash flows gently',
+  'reports.month_selector': 'Analyzed month',
+  'reports.all_months': 'All months',
+  'reports.income': 'Total Income',
+  'reports.expense': 'Total Expenses',
+  'reports.savings': 'Net Savings',
+  'reports.savings_rate': 'Savings Rate',
+  'reports.daily_average': 'Avg daily spend',
+  'reports.operations_count': 'Total transactions',
+  'reports.monthly_evolution': 'Monthly Flow Evolution',
+  'reports.category_breakdown': 'Category Breakdown',
+  'reports.daily_trend': 'Daily spending trend',
+  'reports.accounts_flow': 'Flow by Account',
+  'reports.no_data': 'No data for this month',
+  'reports.mascot_tip_positive': 'Well done! You managed to save this month, your honey pot is growing!',
+  'reports.mascot_tip_deficit': 'Caution this month, expenses exceeded your incoming honey.',
 };
 

@@ -8,6 +8,7 @@ export interface Translations {
   'nav.accounts': string;
   'nav.transactions': string;
   'nav.categories': string;
+  'nav.reports': string;
   'nav.settings': string;
   'common.cancel': string;
   'common.confirm': string;
@@ -128,5 +129,24 @@ export interface Translations {
   'settings.about_desc': string;
   'settings.convert_budgets': string;
   'settings.budgets_converted_success': string;
+
+  // Reports
+  'reports.title': string;
+  'reports.subtitle': string;
+  'reports.month_selector': string;
+  'reports.all_months': string;
+  'reports.income': string;
+  'reports.expense': string;
+  'reports.savings': string;
+  'reports.savings_rate': string;
+  'reports.daily_average': string;
+  'reports.operations_count': string;
+  'reports.monthly_evolution': string;
+  'reports.category_breakdown': string;
+  'reports.daily_trend': string;
+  'reports.accounts_flow': string;
+  'reports.no_data': string;
+  'reports.mascot_tip_positive': string;
+  'reports.mascot_tip_deficit': string;
 }
 

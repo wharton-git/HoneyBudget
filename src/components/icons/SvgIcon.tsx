@@ -31,6 +31,8 @@ export type IconName =
   | 'upload'
   | 'shield'
   | 'pie-chart'
+  | 'bar-chart'
+  | 'trending-up'
   | 'calendar'
   | 'search'
   | 'refresh'
@@ -260,6 +262,21 @@ export const SvgIcon = component$<SvgIconProps>(({ name, size = 20, class: class
           <>
             <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
             <path d="M22 12A10 10 0 0 0 12 2v10z" />
+          </>
+        );
+      case 'bar-chart':
+        return (
+          <>
+            <line x1="12" y1="20" x2="12" y2="10" />
+            <line x1="18" y1="20" x2="18" y2="4" />
+            <line x1="6" y1="20" x2="6" y2="16" />
+          </>
+        );
+      case 'trending-up':
+        return (
+          <>
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+            <polyline points="17 6 23 6 23 12" />
           </>
         );
       case 'calendar':

@@ -8,6 +8,7 @@ export const fr: Translations = {
   'nav.accounts': 'Comptes',
   'nav.transactions': 'Opérations',
   'nav.categories': 'Budgets',
+  'nav.reports': 'Rapports',
   'nav.settings': 'Réglages',
   'common.cancel': 'Annuler',
   'common.confirm': 'Confirmer',
@@ -128,5 +129,24 @@ export const fr: Translations = {
   'settings.about_desc': 'Application PWA autonome, sécurisée et respectueuse de la vie privée. Vos données restent exclusivement sur votre appareil et dans vos sauvegardes.',
   'settings.convert_budgets': 'Recalculer les plafonds de budget vers cette devise',
   'settings.budgets_converted_success': 'Plafonds de budgets convertis avec succès !',
+
+  // Reports
+  'reports.title': 'Rapports Mensuels',
+  'reports.subtitle': 'Analysez vos finances et visualisez vos flux avec douceur',
+  'reports.month_selector': 'Mois analysé',
+  'reports.all_months': 'Tous les mois',
+  'reports.income': 'Revenus totaux',
+  'reports.expense': 'Dépenses totales',
+  'reports.savings': 'Épargne nette',
+  'reports.savings_rate': "Taux d'épargne",
+  'reports.daily_average': 'Dépense moy. / jour',
+  'reports.operations_count': 'Opérations enregistrées',
+  'reports.monthly_evolution': 'Évolution mensuelle des flux',
+  'reports.category_breakdown': 'Répartition par Catégorie',
+  'reports.daily_trend': 'Dépenses journalières du mois',
+  'reports.accounts_flow': 'Flux par Compte',
+  'reports.no_data': 'Aucune donnée pour ce mois',
+  'reports.mascot_tip_positive': 'Bravo ! Vous avez réussi à épargner ce mois-ci, votre réserve de miel grandit !',
+  'reports.mascot_tip_deficit': 'Attention ce mois-ci, les dépenses ont dépassé les rentrées d’argent.',
 };
 

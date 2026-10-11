@@ -58,6 +58,18 @@ const parseInitial = (val: string) => {
   };
 };
 
+export const formatTimeAmPm = (tStr?: string): string => {
+  if (!tStr || !tStr.includes(':')) return tStr || '';
+  const [hPart, mPart] = tStr.split(':');
+  const h = parseInt(hPart, 10);
+  const m = parseInt(mPart, 10);
+  if (isNaN(h) || isNaN(m)) return tStr;
+  const period = h >= 12 ? 'PM' : 'AM';
+  let h12 = h % 12;
+  if (h12 === 0) h12 = 12;
+  return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${period}`;
+};
+
 export const HoneyDateTimePicker = component$<HoneyDateTimePickerProps>(({ value, onChange$, label = 'Date et heure' }) => {
   const initial = parseInitial(value);
 
@@ -201,7 +213,9 @@ export const HoneyDateTimePicker = component$<HoneyDateTimePickerProps>(({ value
     }
   }
 
-  const timeLabel = state.hour && state.minute ? `${state.hour}:${state.minute}` : 'Sans heure';
+  const timeLabel = state.hour && state.minute
+    ? formatTimeAmPm(`${state.hour}:${state.minute}`)
+    : 'Sans heure';
 
   return (
     <div class="space-y-1.5">
@@ -429,10 +443,10 @@ export const HoneyDateTimePicker = component$<HoneyDateTimePickerProps>(({ value
                   </div>
                   <div>
                     <span class="text-xs font-black text-amber-950 block">
-                      {state.hour && state.minute ? `${state.hour}:${state.minute}` : '12:00'}
+                      {state.hour && state.minute ? formatTimeAmPm(`${state.hour}:${state.minute}`) : '12:00 PM'}
                     </span>
                     <span class="text-[9px] font-bold text-amber-800/80 block">
-                      Double cadran (0-23h / 0-59m)
+                      Cadran 12h (AM/PM) & Minutes
                     </span>
                   </div>
                 </div>

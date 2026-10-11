@@ -3,10 +3,10 @@ import { SvgIcon } from '../icons/SvgIcon';
 
 interface ConcentricClockModalProps {
   isOpen: boolean;
-  initialHour?: string;
+  initialHour?: string; // 24h string (e.g. "14" or "09")
   initialMinute?: string;
   onClose$: PropFunction<() => void>;
-  onSelect$: PropFunction<(hour: string, minute: string) => void>;
+  onSelect$: PropFunction<(hour24: string, minute: string, period?: 'AM' | 'PM') => void>;
 }
 
 export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
@@ -17,9 +17,11 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
   onSelect$,
 }) => {
   const state = useStore({
-    hour: parseInt(initialHour, 10) || 12,
-    minute: parseInt(initialMinute, 10) || 0,
+    hour12: 12,
+    minute: 0,
+    period: 'PM' as 'AM' | 'PM',
     activeUnit: 'hour' as 'hour' | 'minute',
+    minuteStepMode: 'step5' as 'step5' | 'step1', // snap to multiples of 5 or 1-minute exact
     isDragging: false,
     dragTarget: 'hour' as 'hour' | 'minute',
   });
@@ -31,7 +33,13 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
 
     const parsedH = parseInt(initialHour, 10);
     const parsedM = parseInt(initialMinute, 10);
-    state.hour = isNaN(parsedH) ? 12 : (parsedH % 24 + 24) % 24;
+
+    const safeH = isNaN(parsedH) ? 12 : (parsedH % 24 + 24) % 24;
+    state.period = safeH >= 12 ? 'PM' : 'AM';
+    let h12 = safeH % 12;
+    if (h12 === 0) h12 = 12;
+    state.hour12 = h12;
+
     state.minute = isNaN(parsedM) ? 0 : (parsedM % 60 + 60) % 60;
     state.activeUnit = 'hour';
     state.isDragging = false;
@@ -64,24 +72,36 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
     }
 
     if (target === 'hour') {
-      const h = Math.round(deg / 15) % 24;
-      state.hour = h;
+      let h = Math.round(deg / 30) % 12;
+      if (h === 0) h = 12;
+      state.hour12 = h;
     } else {
-      const m = Math.round(deg / 6) % 60;
+      let m = Math.round(deg / 6) % 60;
+      if (state.minuteStepMode === 'step5') {
+        m = (Math.round(m / 5) * 5) % 60;
+      }
       state.minute = m;
     }
   });
 
   const handleSetNow$ = $(() => {
     const now = new Date();
-    state.hour = now.getHours();
+    const h24 = now.getHours();
+    state.period = h24 >= 12 ? 'PM' : 'AM';
+    let h12 = h24 % 12;
+    if (h12 === 0) h12 = 12;
+    state.hour12 = h12;
     state.minute = now.getMinutes();
   });
 
   const handleConfirm$ = $(() => {
-    const hStr = String(state.hour).padStart(2, '0');
+    let h24 = state.hour12 % 12;
+    if (state.period === 'PM') {
+      h24 += 12;
+    }
+    const hStr = String(h24).padStart(2, '0');
     const mStr = String(state.minute).padStart(2, '0');
-    onSelect$(hStr, mStr);
+    onSelect$(hStr, mStr, state.period);
     onClose$();
   });
 
@@ -93,27 +113,27 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
   const rHour = 76;
   const rMin = 132;
 
-  // Selected hour coordinates & angle
-  const hourAngle = -90 + state.hour * 15;
+  // Selected 12-hour angle & coordinates (12 is at -90 deg, 1 at -60 deg...)
+  const hourAngle = -90 + (state.hour12 % 12) * 30;
   const hourRad = (hourAngle * Math.PI) / 180;
   const hourX = cx + rHour * Math.cos(hourRad);
   const hourY = cy + rHour * Math.sin(hourRad);
 
-  // Selected minute coordinates & angle
+  // Selected minute angle & coordinates
   const minAngle = -90 + state.minute * 6;
   const minRad = (minAngle * Math.PI) / 180;
   const minX = cx + rMin * Math.cos(minRad);
   const minY = cy + rMin * Math.sin(minRad);
 
-  // 24 hours list
-  const hours = Array.from({ length: 24 }).map((_, i) => {
-    const a = -90 + i * 15;
+  // 12 hours list (1 to 12)
+  const hours12List = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((h) => {
+    const a = -90 + (h % 12) * 30;
     const rad = (a * Math.PI) / 180;
     return {
-      hour: i,
+      hour: h,
       x: cx + rHour * Math.cos(rad),
       y: cy + rHour * Math.sin(rad),
-      isSelected: i === state.hour,
+      isSelected: h === state.hour12,
     };
   });
 
@@ -161,7 +181,7 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
                 Sélection de l'heure
               </h3>
               <span class="text-[10px] font-semibold text-slate-500">
-                Double cadran concentrique
+                12 Heures (AM/PM) & Minutes
               </span>
             </div>
           </div>
@@ -176,31 +196,33 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
           </button>
         </div>
 
-        {/* Big Digital Readout */}
-        <div class="flex items-center justify-center gap-2 sm:gap-3 py-1">
+        {/* Digital Readout + AM/PM Switch */}
+        <div class="flex items-center justify-center gap-3 py-1">
+          {/* Hour (1-12) */}
           <button
             type="button"
             onClick$={() => (state.activeUnit = 'hour')}
-            class={`px-4 py-2 rounded-2xl border-2 transition-all cursor-pointer text-center ${
+            class={`px-3.5 py-2 rounded-2xl border-2 transition-all cursor-pointer text-center ${
               state.activeUnit === 'hour'
                 ? 'bg-amber-400 text-amber-950 border-amber-500 font-black shadow-xs ring-2 ring-amber-300'
                 : 'bg-amber-50/70 text-amber-900 border-amber-200 font-bold hover:bg-amber-100'
             }`}
           >
             <span class="text-2xl font-black block tracking-tight">
-              {String(state.hour).padStart(2, '0')}
+              {String(state.hour12).padStart(2, '0')}
             </span>
             <span class="text-[9px] uppercase tracking-wider block font-bold text-amber-900/80">
-              Heure (0-23)
+              Heure (1-12)
             </span>
           </button>
 
           <span class="text-2xl font-black text-amber-900 pb-3">:</span>
 
+          {/* Minute (0-59) */}
           <button
             type="button"
             onClick$={() => (state.activeUnit = 'minute')}
-            class={`px-4 py-2 rounded-2xl border-2 transition-all cursor-pointer text-center ${
+            class={`px-3.5 py-2 rounded-2xl border-2 transition-all cursor-pointer text-center ${
               state.activeUnit === 'minute'
                 ? 'bg-amber-500 text-white border-amber-600 font-black shadow-xs ring-2 ring-amber-300'
                 : 'bg-amber-50/70 text-amber-900 border-amber-200 font-bold hover:bg-amber-100'
@@ -213,9 +235,61 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
               Minute (0-59)
             </span>
           </button>
+
+          {/* AM / PM Segmented Toggle */}
+          <div class="flex flex-col gap-1 p-1 bg-amber-100/70 rounded-2xl border border-amber-200">
+            <button
+              type="button"
+              onClick$={() => (state.period = 'AM')}
+              class={`px-3 py-1 text-xs font-black rounded-xl transition-all cursor-pointer ${
+                state.period === 'AM'
+                  ? 'bg-amber-400 text-amber-950 shadow-xs font-black'
+                  : 'text-amber-800 hover:text-amber-950'
+              }`}
+            >
+              AM
+            </button>
+            <button
+              type="button"
+              onClick$={() => (state.period = 'PM')}
+              class={`px-3 py-1 text-xs font-black rounded-xl transition-all cursor-pointer ${
+                state.period === 'PM'
+                  ? 'bg-amber-500 text-white shadow-xs font-black'
+                  : 'text-amber-800 hover:text-amber-950'
+              }`}
+            >
+              PM
+            </button>
+          </div>
         </div>
 
-        {/* The 2 Concentric Circles Dial */}
+        {/* Minute Selection Precision Toggle */}
+        <div class="flex items-center justify-center p-1 bg-amber-100/60 rounded-2xl border border-amber-200 text-xs">
+          <button
+            type="button"
+            onClick$={() => (state.minuteStepMode = 'step5')}
+            class={`flex-1 py-1.5 px-2 rounded-xl font-bold transition-all cursor-pointer text-center text-[11px] ${
+              state.minuteStepMode === 'step5'
+                ? 'bg-white text-amber-950 shadow-2xs font-black'
+                : 'text-amber-800 hover:text-amber-950'
+            }`}
+          >
+            Multiples de 5 (0, 5, 10...)
+          </button>
+          <button
+            type="button"
+            onClick$={() => (state.minuteStepMode = 'step1')}
+            class={`flex-1 py-1.5 px-2 rounded-xl font-bold transition-all cursor-pointer text-center text-[11px] ${
+              state.minuteStepMode === 'step1'
+                ? 'bg-white text-amber-950 shadow-2xs font-black'
+                : 'text-amber-800 hover:text-amber-950'
+            }`}
+          >
+            Toutes les minutes (1-59)
+          </button>
+        </div>
+
+        {/* Concentric Clock SVG Dial */}
         <div class="relative w-full max-w-[290px] sm:max-w-[310px] mx-auto select-none touch-none">
           <svg
             viewBox="0 0 340 340"
@@ -345,7 +419,7 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
               {String(state.minute).padStart(2, '0')}
             </text>
 
-            {/* Outer Circle (Minutes 0 to 59: Multiples of 5) */}
+            {/* Outer Circle (Minutes: Multiples of 5) */}
             {minuteMultiples.map((m) => {
               if (m.minute === state.minute) return null; // already rendered by selected badge
               return (
@@ -368,7 +442,7 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
                     y={m.y}
                     text-anchor="middle"
                     dominant-baseline="central"
-                    font-size="10"
+                    font-size="10.5"
                     font-weight="700"
                     fill="#92400E"
                   >
@@ -382,31 +456,31 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
             <circle
               cx={hourX}
               cy={hourY}
-              r={10.5}
+              r={12}
               fill="#F59E0B"
               stroke="#451A03"
-              stroke-width="1"
+              stroke-width="1.2"
             />
             <text
               x={hourX}
               y={hourY}
               text-anchor="middle"
               dominant-baseline="central"
-              font-size="9"
+              font-size="11"
               font-weight="900"
               fill="#451A03"
             >
-              {state.hour}
+              {state.hour12}
             </text>
 
-            {/* Inner Circle (Hours 0 to 23) */}
-            {hours.map((h) => {
-              if (h.hour === state.hour) return null; // already rendered by selected badge
+            {/* Inner Circle (12 Hours: 1 to 12) */}
+            {hours12List.map((h) => {
+              if (h.hour === state.hour12) return null; // already rendered by selected badge
               return (
                 <g
                   key={`h-${h.hour}`}
                   onClick$={() => {
-                    state.hour = h.hour;
+                    state.hour12 = h.hour;
                     state.activeUnit = 'hour';
                   }}
                   class="cursor-pointer"
@@ -414,7 +488,7 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
                   <circle
                     cx={h.x}
                     cy={h.y}
-                    r={9.5}
+                    r={11}
                     fill="transparent"
                   />
                   <text
@@ -422,8 +496,8 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
                     y={h.y}
                     text-anchor="middle"
                     dominant-baseline="central"
-                    font-size="8.5"
-                    font-weight="700"
+                    font-size="11"
+                    font-weight="800"
                     fill="#78350F"
                   >
                     {h.hour}
@@ -438,12 +512,12 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
         <div class="grid grid-cols-2 gap-2 text-[10px] font-bold">
           <div class="flex items-center justify-center gap-1.5 p-1.5 rounded-xl bg-amber-50 text-amber-950 border border-amber-200">
             <span class="w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-500 shrink-0"></span>
-            <span>1er cercle : Heures (0 à 23)</span>
+            <span>1er cercle : 12 Heures</span>
           </div>
 
           <div class="flex items-center justify-center gap-1.5 p-1.5 rounded-xl bg-amber-50 text-amber-950 border border-amber-200">
             <span class="w-2.5 h-2.5 rounded-full bg-amber-600 border border-amber-700 shrink-0"></span>
-            <span>2nd cercle : Minutes (0 à 59)</span>
+            <span>2nd cercle : Minutes (0-59)</span>
           </div>
         </div>
 
@@ -460,30 +534,48 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
             <button
               type="button"
               onClick$={() => {
-                state.hour = 12;
+                state.hour12 = 12;
                 state.minute = 0;
+                state.period = 'PM';
               }}
               class="px-2 py-1 text-[11px] font-bold rounded-lg bg-white hover:bg-amber-50 text-amber-900 border border-amber-200 cursor-pointer"
             >
-              12:00
+              12:00 PM
             </button>
             <button
               type="button"
               onClick$={() => {
-                state.hour = 19;
+                state.hour12 = 7;
                 state.minute = 0;
+                state.period = 'PM';
               }}
               class="px-2 py-1 text-[11px] font-bold rounded-lg bg-white hover:bg-amber-50 text-amber-900 border border-amber-200 cursor-pointer"
             >
-              19:00
+              07:00 PM
             </button>
           </div>
 
           <div class="flex items-center gap-1">
             <button
               type="button"
-              onClick$={() => (state.minute = (state.minute - 5 + 60) % 60)}
+              onClick$={() => (state.minute = (state.minute - 1 + 60) % 60)}
               class="px-1.5 py-1 text-[10px] font-bold rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 cursor-pointer"
+              title="-1 minute"
+            >
+              -1m
+            </button>
+            <button
+              type="button"
+              onClick$={() => (state.minute = (state.minute + 1) % 60)}
+              class="px-1.5 py-1 text-[10px] font-bold rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 cursor-pointer"
+              title="+1 minute"
+            >
+              +1m
+            </button>
+            <button
+              type="button"
+              onClick$={() => (state.minute = (state.minute - 5 + 60) % 60)}
+              class="px-1.5 py-1 text-[10px] font-bold rounded-lg bg-amber-200/80 hover:bg-amber-300 text-amber-950 cursor-pointer"
               title="-5 minutes"
             >
               -5m
@@ -491,7 +583,7 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
             <button
               type="button"
               onClick$={() => (state.minute = (state.minute + 5) % 60)}
-              class="px-1.5 py-1 text-[10px] font-bold rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 cursor-pointer"
+              class="px-1.5 py-1 text-[10px] font-bold rounded-lg bg-amber-200/80 hover:bg-amber-300 text-amber-950 cursor-pointer"
               title="+5 minutes"
             >
               +5m

@@ -4,6 +4,7 @@ import { useI18n, t } from '../../i18n/context';
 import { SvgIcon } from '../../components/icons/SvgIcon';
 import { db, type Account, type Category, type Transaction } from '../../db';
 import { formatMoney, convertCurrency, getCurrencyDecimals } from '../../services/currency/ratesService';
+import { formatTimeAmPm } from '../../components/common/HoneyDateTimePicker';
 
 export default component$(() => {
   const { lang } = useI18n();
@@ -361,7 +362,7 @@ export default component$(() => {
                         <span>{tx.date.split(' ')[0]}</span>
                         {tx.date.includes(' ') && (
                           <span class="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-900 font-bold text-[10px]">
-                            {tx.date.split(' ')[1]}
+                            {formatTimeAmPm(tx.date.split(' ')[1])}
                           </span>
                         )}
                         <span>•</span>

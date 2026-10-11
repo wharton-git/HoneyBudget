@@ -4,7 +4,7 @@ import { useI18n, t } from '../../i18n/context';
 import { SvgIcon } from '../../components/icons/SvgIcon';
 import { TransactionModal } from '../../components/transactions/TransactionModal';
 import { db, type Account, type Category, type Transaction } from '../../db';
-import { formatMoney, convertCurrency } from '../../services/currency/ratesService';
+import { formatMoney, convertCurrency, getCurrencyDecimals } from '../../services/currency/ratesService';
 
 export default component$(() => {
   const { lang } = useI18n();
@@ -63,7 +63,10 @@ export default component$(() => {
           const target = await db.accounts.get(tx.targetAccountId);
           await db.accounts.update(acc.id!, { balance: acc.balance + tx.amount });
           if (target) {
-            await db.accounts.update(target.id!, { balance: target.balance - tx.amount });
+            const targetVal = convertCurrency(tx.amount, acc.currencyCode, target.currencyCode, state.rates);
+            const dec = getCurrencyDecimals(target.currencyCode);
+            const roundedVal = dec === 0 ? Math.round(targetVal) : Math.round(targetVal * 100) / 100;
+            await db.accounts.update(target.id!, { balance: target.balance - roundedVal });
           }
         }
       }

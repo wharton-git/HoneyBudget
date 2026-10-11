@@ -125,7 +125,10 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
             const prevTarget = await db.accounts.get(editTransaction.targetAccountId);
             await db.accounts.update(prevAcc.id!, { balance: prevAcc.balance + editTransaction.amount });
             if (prevTarget) {
-              await db.accounts.update(prevTarget.id!, { balance: prevTarget.balance - editTransaction.amount });
+              const prevTargetVal = convertCurrency(editTransaction.amount, prevAcc.currencyCode, prevTarget.currencyCode, state.rates);
+              const dec = getCurrencyDecimals(prevTarget.currencyCode);
+              const roundedPrev = dec === 0 ? Math.round(prevTargetVal) : Math.round(prevTargetVal * 100) / 100;
+              await db.accounts.update(prevTarget.id!, { balance: prevTarget.balance - roundedPrev });
             }
           }
         }
@@ -173,8 +176,11 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
             await db.accounts.update(state.accountId, {
               balance: updatedAcc.balance - val,
             });
+            const targetVal = convertCurrency(val, updatedAcc.currencyCode, targetAccount.currencyCode, state.rates);
+            const dec = getCurrencyDecimals(targetAccount.currencyCode);
+            const roundedVal = dec === 0 ? Math.round(targetVal) : Math.round(targetVal * 100) / 100;
             await db.accounts.update(state.targetAccountId, {
-              balance: targetAccount.balance + val,
+              balance: targetAccount.balance + roundedVal,
             });
           }
         }

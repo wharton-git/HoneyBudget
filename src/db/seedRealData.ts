@@ -8,7 +8,7 @@ export const REAL_SETTINGS: AppSettingsRecord = {
   theme: 'honey-mga-real',
   rates: DEFAULT_RATES_FROM_EUR,
   lastRatesUpdate: new Date().toISOString(),
-  seedVersion: 2,
+  seedVersion: 3,
 };
 
 export const REAL_ACCOUNTS: Account[] = [
@@ -26,7 +26,7 @@ export const REAL_ACCOUNTS: Account[] = [
     "name": "Mvola 2",
     "type": "checking",
     "currencyCode": "MGA",
-    "balance": 211900,
+    "balance": 133650,
     "color": "#10B981",
     "iconSvg": "coin"
   },
@@ -52,8 +52,8 @@ export const REAL_ACCOUNTS: Account[] = [
     "id": 5,
     "name": "Redotpay",
     "type": "checking",
-    "currencyCode": "MGA",
-    "balance": 6000,
+    "currencyCode": "USD",
+    "balance": 3.31,
     "color": "#8B5CF6",
     "iconSvg": "piggy"
   }
@@ -5183,5 +5183,97 @@ export const REAL_TRANSACTIONS: Transaction[] = [
     "label": "Side job",
     "type": "income",
     "notes": "22:18"
+  }
+,
+  {
+    "id": 475,
+    "accountId": 1,
+    "categoryId": 14,
+    "amount": 8500.0,
+    "date": "2026-10-09",
+    "label": "Achat Souris",
+    "notes": "Souris: 6 000 Ar, Frais livraison: 2 500 Ar (11:50)",
+    "type": "expense"
+  },
+  {
+    "id": 476,
+    "accountId": 1,
+    "categoryId": 15,
+    "amount": 2000.0,
+    "date": "2026-10-09",
+    "label": "Déjeuner",
+    "notes": "Déjeuner (13:00)",
+    "type": "expense"
+  },
+  {
+    "id": 477,
+    "accountId": 2,
+    "targetAccountId": 5,
+    "categoryId": 45,
+    "amount": 25000.0,
+    "date": "2026-10-09",
+    "label": "Transfert vers Redotpay",
+    "notes": "Reçu 5.00 $ sur Redotpay (1$ frais) (15:00)",
+    "type": "transfer"
+  },
+  {
+    "id": 478,
+    "accountId": 5,
+    "categoryId": 11,
+    "amount": 3.0,
+    "date": "2026-10-09",
+    "label": "SMSpool",
+    "notes": "Crédit SMS 3$ (15:30)",
+    "type": "expense"
+  },
+  {
+    "id": 479,
+    "accountId": 2,
+    "categoryId": 45,
+    "amount": 20000.0,
+    "date": "2026-10-09",
+    "label": "Transfert Harena M",
+    "notes": "Envoi vers Harena M (17:25)",
+    "type": "expense"
+  },
+  {
+    "id": 480,
+    "accountId": 2,
+    "categoryId": 45,
+    "amount": 250.0,
+    "date": "2026-10-09",
+    "label": "Frais transfert Mvola",
+    "notes": "Frais envoi Harena M (17:25)",
+    "type": "expense"
+  },
+  {
+    "id": 481,
+    "accountId": 1,
+    "categoryId": 41,
+    "amount": 20500.0,
+    "date": "2026-10-09",
+    "label": "Reçu de Harena",
+    "notes": "Espèces reçues de Harena M (17:27)",
+    "type": "income"
+  },
+  {
+    "id": 482,
+    "accountId": 1,
+    "categoryId": 15,
+    "amount": 10000.0,
+    "date": "2026-10-09",
+    "label": "Resto",
+    "notes": "PatteSeche au poulet: 7 000 Ar, Tacos simple: 3 000 Ar (18:00)",
+    "type": "expense"
+  },
+  {
+    "id": 483,
+    "accountId": 2,
+    "categoryId": 15,
+    "amount": 33000.0,
+    "date": "2026-10-09",
+    "label": "Score",
+    "notes": "Vin Blanc: 24 000 Ar, Gourde: 6 000 Ar, Achard Sakoa: 3 000 Ar (19:00)",
+    "type": "expense"
   }
 ];

@@ -18,6 +18,9 @@ export default component$(() => {
     filterType: 'all' as 'all' | 'expense' | 'income' | 'transfer',
     searchQuery: '',
     selectedAccountId: 0,
+    expandedGroupIds: [] as number[],
+    selectedTxIds: [] as number[],
+    isMultiSelectMode: false,
     isTxModalOpen: false,
     editingTx: null as Transaction | null,
   });
@@ -46,6 +49,87 @@ export default component$(() => {
     cleanup(() => {
       window.removeEventListener('honey_currency_changed', onCurrencyChanged);
     });
+  });
+
+  const handleToggleExpand$ = $((txId: number) => {
+    if (state.expandedGroupIds.includes(txId)) {
+      state.expandedGroupIds = state.expandedGroupIds.filter((id) => id !== txId);
+    } else {
+      state.expandedGroupIds = [...state.expandedGroupIds, txId];
+    }
+  });
+
+  const handleToggleSelect$ = $((txId: number) => {
+    if (state.selectedTxIds.includes(txId)) {
+      state.selectedTxIds = state.selectedTxIds.filter((id) => id !== txId);
+    } else {
+      state.selectedTxIds = [...state.selectedTxIds, txId];
+    }
+  });
+
+  const handleUngroup$ = $(async (tx: Transaction) => {
+    if (!tx.items || tx.items.length === 0) return;
+    if (confirm(`Dégrouper "${tx.label}" en ${tx.items.length} opérations individuelles ?`)) {
+      await db.transactions.delete(tx.id!);
+
+      for (const item of tx.items) {
+        const itemTotal = item.amount * (item.quantity && item.quantity > 1 ? item.quantity : 1);
+        await db.transactions.add({
+          accountId: tx.accountId,
+          categoryId: tx.categoryId,
+          amount: itemTotal,
+          date: tx.date,
+          label: `${tx.label} - ${item.name}`,
+          type: tx.type,
+          isGroup: false,
+        });
+      }
+
+      await loadData$();
+    }
+  });
+
+  const handleGroupSelected$ = $(async () => {
+    if (state.selectedTxIds.length < 2) return;
+    const toGroup = state.transactions.filter((tx) => state.selectedTxIds.includes(tx.id!));
+    if (toGroup.length === 0) return;
+
+    const firstAcc = toGroup[0].accountId;
+    const sameAcc = toGroup.every((t) => t.accountId === firstAcc);
+    if (!sameAcc) {
+      alert('Veuillez sélectionner des opérations du même compte pour les grouper.');
+      return;
+    }
+
+    const title = prompt('Titre du groupe d\'achats (ex: Score, Super U, Sortie restaurant) :', 'Achat groupé');
+    if (!title || !title.trim()) return;
+
+    const totalAmount = toGroup.reduce((sum, t) => sum + t.amount, 0);
+    const items = toGroup.map((t, idx) => ({
+      id: String(idx + 1),
+      name: t.label,
+      amount: t.amount,
+      quantity: 1,
+    }));
+
+    await db.transactions.add({
+      accountId: firstAcc,
+      categoryId: toGroup[0].categoryId,
+      amount: totalAmount,
+      date: toGroup[0].date,
+      label: title.trim(),
+      type: toGroup[0].type,
+      isGroup: true,
+      items,
+    });
+
+    for (const t of toGroup) {
+      await db.transactions.delete(t.id!);
+    }
+
+    state.selectedTxIds = [];
+    state.isMultiSelectMode = false;
+    await loadData$();
   });
 
 
@@ -100,18 +184,67 @@ export default component$(() => {
           </h2>
         </div>
 
-        <button
-          type="button"
-          onClick$={() => {
-            state.editingTx = null;
-            state.isTxModalOpen = true;
-          }}
-          class="flex items-center gap-1.5 px-4 py-2 rounded-full bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold text-xs shadow-xs active:scale-95 transition-all cursor-pointer"
-        >
-          <SvgIcon name="plus" size={14} />
-          <span>{t(lang, 'tx.new')}</span>
-        </button>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            onClick$={() => {
+              state.isMultiSelectMode = !state.isMultiSelectMode;
+              if (!state.isMultiSelectMode) {
+                state.selectedTxIds = [];
+              }
+            }}
+            class={`flex items-center gap-1.5 px-3 py-2 rounded-full font-bold text-xs transition-all cursor-pointer ${
+              state.isMultiSelectMode
+                ? 'bg-amber-300 text-amber-950 border border-amber-400 shadow-xs'
+                : 'bg-white hover:bg-amber-100 text-amber-900 border border-amber-200'
+            }`}
+            title="Activer la sélection multiple pour grouper des opérations"
+          >
+            <SvgIcon name="tag" size={13} />
+            <span>{state.isMultiSelectMode ? 'Annuler' : 'Grouper'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick$={() => {
+              state.editingTx = null;
+              state.isTxModalOpen = true;
+            }}
+            class="flex items-center gap-1.5 px-4 py-2 rounded-full bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold text-xs shadow-xs active:scale-95 transition-all cursor-pointer"
+          >
+            <SvgIcon name="plus" size={14} />
+            <span>{t(lang, 'tx.new')}</span>
+          </button>
+        </div>
       </div>
+
+      {/* Multi-Select Grouping Action Banner */}
+      {state.isMultiSelectMode && (
+        <div class="p-3.5 bg-amber-100/90 rounded-3xl border-2 border-amber-300 flex items-center justify-between shadow-xs">
+          <div class="text-xs font-black text-amber-950 flex items-center gap-2">
+            <div class="w-6 h-6 rounded-lg bg-amber-200 flex items-center justify-center text-amber-900">
+              <SvgIcon name="check" size={13} />
+            </div>
+            <span>{state.selectedTxIds.length} opération(s) sélectionnée(s)</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              onClick$={handleGroupSelected$}
+              disabled={state.selectedTxIds.length < 2}
+              class={`px-3.5 py-1.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 ${
+                state.selectedTxIds.length >= 2
+                  ? 'bg-amber-400 hover:bg-amber-500 text-amber-950 shadow-xs cursor-pointer'
+                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+              }`}
+            >
+              <SvgIcon name="tag" size={13} />
+              <span>Grouper en 1 ticket</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Filter and Search Bar */}
       <div class="bg-white rounded-3xl p-4 border-2 border-amber-100 shadow-xs space-y-3">
@@ -180,90 +313,174 @@ export default component$(() => {
             const cat = getCategory(tx.categoryId);
             const isIncome = tx.type === 'income';
             const isTransfer = tx.type === 'transfer';
+            const isGroupExpanded = state.expandedGroupIds.includes(tx.id!);
+            const isSelected = state.selectedTxIds.includes(tx.id!);
 
             return (
               <div
                 key={tx.id}
-                class="bg-white rounded-2xl p-4 border-2 border-amber-50 hover:border-amber-200 shadow-xs flex items-center justify-between transition-all"
+                class={`bg-white rounded-2xl p-4 border-2 shadow-xs transition-all ${
+                  isSelected
+                    ? 'border-amber-400 bg-amber-50/40'
+                    : 'border-amber-50 hover:border-amber-200'
+                }`}
               >
-                <div class="flex items-center gap-3">
-                  <div
-                    class="w-11 h-11 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-xs"
-                    style={{ backgroundColor: cat?.color || '#F59E0B' }}
-                  >
-                    <SvgIcon name={cat?.iconSvg || 'tag'} size={20} />
-                  </div>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    {state.isMultiSelectMode && (
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange$={() => handleToggleSelect$(tx.id!)}
+                        class="w-4 h-4 rounded text-amber-600 focus:ring-amber-400 border-amber-300 cursor-pointer"
+                      />
+                    )}
 
-                  <div>
-                    <div class="text-sm font-black text-slate-800">{tx.label}</div>
-                    <div class="text-[11px] font-semibold text-slate-500 flex items-center flex-wrap gap-1.5 mt-0.5">
-                      <span>{tx.date.split(' ')[0]}</span>
-                      {tx.date.includes(' ') && (
-                        <span class="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-900 font-bold text-[10px]">
-                          {tx.date.split(' ')[1]}
-                        </span>
-                      )}
-                      <span>•</span>
-                      <span class="text-amber-800 font-bold">{acc?.name}</span>
-                      {tx.notes && (
-                        <>
-                          <span>•</span>
-                          <span class="italic text-slate-400 truncate max-w-[120px]">{tx.notes}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div class="flex items-center gap-3">
-                  <div class="text-right">
                     <div
-                      class={`text-sm sm:text-base font-black ${
-                        isIncome
-                          ? 'text-emerald-600'
-                          : isTransfer
-                          ? 'text-sky-600'
-                          : 'text-rose-600'
-                      }`}
+                      class="w-11 h-11 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-xs"
+                      style={{ backgroundColor: cat?.color || '#F59E0B' }}
                     >
-                      {isIncome ? '+' : isTransfer ? '' : '-'}
-                      {formatMoney(tx.amount, acc?.currencyCode || 'EUR', lang === 'en' ? 'en-US' : 'fr-FR')}
+                      <SvgIcon name={tx.isGroup ? 'tag' : (cat?.iconSvg || 'tag')} size={20} />
                     </div>
-                    {acc && acc.currencyCode !== state.baseCurrency && (
-                      <div class="text-[11px] font-bold text-amber-700/90 mt-0.5">
-                        ≈ {isIncome ? '+' : isTransfer ? '' : '-'}
-                        {formatMoney(
-                          convertCurrency(tx.amount, acc.currencyCode, state.baseCurrency, state.rates),
-                          state.baseCurrency,
-                          lang === 'en' ? 'en-US' : 'fr-FR'
+
+                    <div>
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <span class="text-sm font-black text-slate-800">{tx.label}</span>
+                        {tx.isGroup && tx.items && tx.items.length > 0 && (
+                          <button
+                            type="button"
+                            onClick$={() => handleToggleExpand$(tx.id!)}
+                            class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-950 text-[10px] font-black transition-colors cursor-pointer"
+                            title="Afficher/masquer les détails du panier"
+                          >
+                            <SvgIcon name="tag" size={11} class="text-amber-700" />
+                            <span>{tx.items.length} articles</span>
+                            <SvgIcon
+                              name={isGroupExpanded ? 'chevron-up' : 'chevron-down'}
+                              size={11}
+                              class="text-amber-700"
+                            />
+                          </button>
                         )}
                       </div>
-                    )}
+
+                      <div class="text-[11px] font-semibold text-slate-500 flex items-center flex-wrap gap-1.5 mt-0.5">
+                        <span>{tx.date.split(' ')[0]}</span>
+                        {tx.date.includes(' ') && (
+                          <span class="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-900 font-bold text-[10px]">
+                            {tx.date.split(' ')[1]}
+                          </span>
+                        )}
+                        <span>•</span>
+                        <span class="text-amber-800 font-bold">{acc?.name}</span>
+                        {tx.notes && (
+                          <>
+                            <span>•</span>
+                            <span class="italic text-slate-400 truncate max-w-[120px]">{tx.notes}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
+                  <div class="flex items-center gap-3">
+                    <div class="text-right">
+                      <div
+                        class={`text-sm sm:text-base font-black ${
+                          isIncome
+                            ? 'text-emerald-600'
+                            : isTransfer
+                            ? 'text-sky-600'
+                            : 'text-rose-600'
+                        }`}
+                      >
+                        {isIncome ? '+' : isTransfer ? '' : '-'}
+                        {formatMoney(tx.amount, acc?.currencyCode || 'EUR', lang === 'en' ? 'en-US' : 'fr-FR')}
+                      </div>
+                      {acc && acc.currencyCode !== state.baseCurrency && (
+                        <div class="text-[11px] font-bold text-amber-700/90 mt-0.5">
+                          ≈ {isIncome ? '+' : isTransfer ? '' : '-'}
+                          {formatMoney(
+                            convertCurrency(tx.amount, acc.currencyCode, state.baseCurrency, state.rates),
+                            state.baseCurrency,
+                            lang === 'en' ? 'en-US' : 'fr-FR'
+                          )}
+                        </div>
+                      )}
+                    </div>
 
-                  <div class="flex items-center gap-0.5">
-                    <button
-                      type="button"
-                      onClick$={() => {
-                        state.editingTx = tx;
-                        state.isTxModalOpen = true;
-                      }}
-                      class="p-1.5 rounded-full hover:bg-amber-100 text-amber-800 transition-colors"
-                      title={t(lang, 'common.edit')}
-                    >
-                      <SvgIcon name="edit" size={14} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick$={() => handleDelete$(tx)}
-                      class="p-1.5 rounded-full hover:bg-rose-100 text-rose-700 transition-colors"
-                      title={t(lang, 'common.delete')}
-                    >
-                      <SvgIcon name="trash" size={14} />
-                    </button>
+                    <div class="flex items-center gap-0.5">
+                      <button
+                        type="button"
+                        onClick$={() => {
+                          state.editingTx = tx;
+                          state.isTxModalOpen = true;
+                        }}
+                        class="p-1.5 rounded-full hover:bg-amber-100 text-amber-800 transition-colors cursor-pointer"
+                        title={t(lang, 'common.edit')}
+                      >
+                        <SvgIcon name="edit" size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick$={() => handleDelete$(tx)}
+                        class="p-1.5 rounded-full hover:bg-rose-100 text-rose-700 transition-colors cursor-pointer"
+                        title={t(lang, 'common.delete')}
+                      >
+                        <SvgIcon name="trash" size={14} />
+                      </button>
+                    </div>
                   </div>
                 </div>
+
+                {/* Expanded Group Drawer */}
+                {tx.isGroup && tx.items && tx.items.length > 0 && isGroupExpanded && (
+                  <div class="mt-3 pt-3 border-t border-amber-100 bg-amber-50/60 rounded-2xl p-3.5 space-y-2 animate-in fade-in duration-150">
+                    <div class="flex items-center justify-between text-xs font-black text-amber-950">
+                      <div class="flex items-center gap-1.5">
+                        <SvgIcon name="tag" size={13} class="text-amber-700" />
+                        <span>Détail du panier ({tx.items.length} articles)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick$={() => handleUngroup$(tx)}
+                        class="text-[11px] font-bold text-amber-800 hover:text-amber-950 underline decoration-amber-300 underline-offset-2 transition-colors cursor-pointer"
+                        title="Dégrouper cette opération en plusieurs achats individuels"
+                      >
+                        Dégrouper en achats individuels
+                      </button>
+                    </div>
+
+                    <div class="space-y-1.5 pt-1">
+                      {tx.items.map((item, idx) => {
+                        const lineTotal = item.amount * (item.quantity && item.quantity > 1 ? item.quantity : 1);
+                        return (
+                          <div
+                            key={item.id || idx}
+                            class="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-amber-200/70 shadow-2xs"
+                          >
+                            <div class="flex items-center gap-2">
+                              <span class="w-4 text-center font-bold text-slate-400 text-[10px]">
+                                {idx + 1}
+                              </span>
+                              <span class="text-xs font-bold text-slate-800">
+                                {item.name}
+                              </span>
+                              {item.quantity && item.quantity > 1 && (
+                                <span class="px-1.5 py-0.2 rounded bg-amber-100 text-amber-900 text-[10px] font-bold">
+                                  x{item.quantity}
+                                </span>
+                              )}
+                            </div>
+                            <span class="text-xs font-black text-amber-950">
+                              {formatMoney(lineTotal, acc?.currencyCode || 'MGA', lang === 'en' ? 'en-US' : 'fr-FR')}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}

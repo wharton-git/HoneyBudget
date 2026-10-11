@@ -22,6 +22,8 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
 
   const state = useStore({
     type: 'expense' as 'expense' | 'income' | 'transfer',
+    isGroup: false,
+    groupItems: [] as Array<{ id: string; name: string; amount: string; quantity: string }>,
     accountId: 0,
     targetAccountId: 0,
     categoryId: 0,
@@ -34,6 +36,32 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
     accounts: [] as Account[],
     categories: [] as Category[],
     loading: false,
+  });
+
+  const recomputeGroupTotal$ = $(() => {
+    let sum = 0;
+    for (const it of state.groupItems) {
+      const price = parseFloat(it.amount);
+      const qty = parseInt(it.quantity, 10);
+      if (!isNaN(price) && price > 0) {
+        sum += price * (isNaN(qty) || qty <= 0 ? 1 : qty);
+      }
+    }
+    state.amount = sum > 0 ? String(sum) : '';
+  });
+
+  const handleAddItem$ = $(() => {
+    state.groupItems.push({
+      id: String(Date.now() + Math.random()),
+      name: '',
+      amount: '',
+      quantity: '1',
+    });
+  });
+
+  const handleRemoveItem$ = $((index: number) => {
+    state.groupItems.splice(index, 1);
+    recomputeGroupTotal$();
   });
 
   // eslint-disable-next-line qwik/no-use-visible-task
@@ -50,6 +78,19 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
 
     if (editTransaction) {
       state.type = editTransaction.type;
+      state.isGroup = !!editTransaction.isGroup;
+      if (editTransaction.isGroup && editTransaction.items && editTransaction.items.length > 0) {
+        state.groupItems = editTransaction.items.map((it, idx) => ({
+          id: it.id || String(idx + 1),
+          name: it.name,
+          amount: String(it.amount),
+          quantity: String(it.quantity || 1),
+        }));
+      } else {
+        state.groupItems = [
+          { id: '1', name: editTransaction.label, amount: String(editTransaction.amount), quantity: '1' },
+        ];
+      }
       state.accountId = editTransaction.accountId;
       state.targetAccountId = editTransaction.targetAccountId || 0;
       state.categoryId = editTransaction.categoryId;
@@ -61,6 +102,10 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
       state.notes = editTransaction.notes || '';
     } else {
       state.type = 'expense';
+      state.isGroup = false;
+      state.groupItems = [
+        { id: '1', name: '', amount: '', quantity: '1' },
+      ];
       state.amount = '';
       state.label = '';
       state.notes = '';
@@ -91,6 +136,18 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
   });
 
   const handleSubmit$ = $(async () => {
+    if (state.isGroup) {
+      let sum = 0;
+      for (const it of state.groupItems) {
+        const price = parseFloat(it.amount);
+        const qty = parseInt(it.quantity, 10);
+        if (!isNaN(price) && price > 0) {
+          sum += price * (isNaN(qty) || qty <= 0 ? 1 : qty);
+        }
+      }
+      state.amount = sum > 0 ? String(sum) : '';
+    }
+
     const rawVal = parseFloat(state.amount);
     if (isNaN(rawVal) || rawVal <= 0 || !state.label.trim() || !state.accountId) {
       return;
@@ -138,6 +195,17 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
         }
       }
 
+      const groupItemsToSave = state.isGroup
+        ? state.groupItems
+            .filter((it) => it.name.trim() || (parseFloat(it.amount) || 0) > 0)
+            .map((it, idx) => ({
+              id: it.id || String(idx + 1),
+              name: it.name.trim() || `Article ${idx + 1}`,
+              amount: parseFloat(it.amount) || 0,
+              quantity: parseInt(it.quantity, 10) || 1,
+            }))
+        : undefined;
+
       // Apply new / updated transaction
       if (!editTransaction) {
         await db.transactions.add({
@@ -149,6 +217,8 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
           label: state.label.trim(),
           notes: notes || undefined,
           type: state.type,
+          isGroup: state.isGroup,
+          items: groupItemsToSave,
         });
       } else {
         await db.transactions.update(editTransaction.id!, {
@@ -160,6 +230,8 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
           label: state.label.trim(),
           notes: notes || undefined,
           type: state.type,
+          isGroup: state.isGroup,
+          items: groupItemsToSave,
         });
       }
 
@@ -227,12 +299,15 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
         </div>
 
         {/* Type selector pill buttons */}
-        <div class="grid grid-cols-3 gap-2 mt-4 p-1 bg-amber-50 rounded-2xl border border-amber-200">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 p-1 bg-amber-50 rounded-2xl border border-amber-200">
           <button
             type="button"
-            onClick$={() => (state.type = 'expense')}
+            onClick$={() => {
+              state.type = 'expense';
+              state.isGroup = false;
+            }}
             class={`py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-              state.type === 'expense'
+              state.type === 'expense' && !state.isGroup
                 ? 'bg-rose-500 text-white shadow-xs'
                 : 'text-amber-900 hover:bg-amber-100/60'
             }`}
@@ -243,9 +318,33 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
 
           <button
             type="button"
-            onClick$={() => (state.type = 'income')}
+            onClick$={() => {
+              state.type = 'expense';
+              state.isGroup = true;
+              if (state.groupItems.length === 0) {
+                state.groupItems = [
+                  { id: '1', name: state.label || '', amount: state.amount || '', quantity: '1' },
+                ];
+              }
+            }}
             class={`py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-              state.type === 'income'
+              state.isGroup
+                ? 'bg-amber-500 text-white shadow-xs'
+                : 'text-amber-900 hover:bg-amber-100/60'
+            }`}
+          >
+            <SvgIcon name="tag" size={14} />
+            <span>Achat Groupé</span>
+          </button>
+
+          <button
+            type="button"
+            onClick$={() => {
+              state.type = 'income';
+              state.isGroup = false;
+            }}
+            class={`py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+              state.type === 'income' && !state.isGroup
                 ? 'bg-emerald-500 text-white shadow-xs'
                 : 'text-amber-900 hover:bg-amber-100/60'
             }`}
@@ -256,9 +355,12 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
 
           <button
             type="button"
-            onClick$={() => (state.type = 'transfer')}
+            onClick$={() => {
+              state.type = 'transfer';
+              state.isGroup = false;
+            }}
             class={`py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-              state.type === 'transfer'
+              state.type === 'transfer' && !state.isGroup
                 ? 'bg-sky-500 text-white shadow-xs'
                 : 'text-amber-900 hover:bg-amber-100/60'
             }`}
@@ -270,73 +372,202 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
 
         {/* Form */}
         <div class="space-y-4 mt-5">
-          {/* Amount & Currency */}
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="block text-xs font-bold text-amber-900">
-                {t(lang, 'tx.amount')}
-              </label>
-              <span class="text-[11px] font-semibold text-slate-500">
-                Devise de saisie
-              </span>
-            </div>
+          {state.isGroup ? (
+            <div class="space-y-3 p-3.5 bg-amber-50/50 rounded-3xl border-2 border-amber-200">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-xl bg-amber-200 text-amber-900 flex items-center justify-center">
+                    <SvgIcon name="tag" size={14} />
+                  </div>
+                  <div>
+                    <span class="text-xs font-black text-amber-950 block">
+                      Panier d'achat groupé
+                    </span>
+                    <span class="text-[10px] font-semibold text-slate-500">
+                      {state.groupItems.length} article(s)
+                    </span>
+                  </div>
+                </div>
 
-            <div class="flex items-center gap-2">
-              <div class="relative flex-1">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[11px] font-bold text-amber-800">Devise :</span>
+                  <select
+                    value={state.currencyCode}
+                    onChange$={(e: any) => (state.currencyCode = e.target.value)}
+                    class="text-xs font-black text-slate-800 px-2.5 py-1 rounded-xl border border-amber-300 bg-white cursor-pointer"
+                  >
+                    {SUPPORTED_CURRENCIES.map((cur) => (
+                      <option key={cur.code} value={cur.code}>
+                        {`${cur.code} (${cur.symbol})`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Group Title */}
+              <div>
+                <label class="block text-xs font-bold text-amber-900 mb-1">
+                  Titre du groupe / Enseigne
+                </label>
                 <input
-                  type="number"
-                  step="any"
-                  value={state.amount}
-                  onInput$={(e: any) => (state.amount = e.target.value)}
-                  placeholder="0.00"
-                  class="w-full text-2xl font-black text-amber-950 px-4 py-2.5 rounded-2xl border-2 border-amber-200 focus:border-amber-400 focus:outline-none bg-amber-50/30"
+                  type="text"
+                  value={state.label}
+                  onInput$={(e: any) => (state.label = e.target.value)}
+                  placeholder="Ex: Score, Super U, Restaurant, Marché..."
+                  class="w-full text-sm font-black text-slate-800 px-3.5 py-2.5 rounded-2xl border-2 border-amber-200 focus:border-amber-400 focus:outline-none bg-white"
                 />
               </div>
-              <select
-                value={state.currencyCode}
-                onChange$={(e: any) => (state.currencyCode = e.target.value)}
-                class="text-xs font-black text-slate-800 px-3 py-3 rounded-2xl border-2 border-amber-200 focus:border-amber-400 focus:outline-none bg-white cursor-pointer self-stretch"
-              >
-                {SUPPORTED_CURRENCIES.map((cur) => (
-                  <option key={cur.code} value={cur.code}>
-                    {`${cur.code} (${cur.symbol})`}
-                  </option>
-                ))}
 
-              </select>
-            </div>
-
-            {/* Live conversion preview if different from account's currency */}
-            {currentAccount && state.currencyCode !== currentAccount.currencyCode && !isNaN(parseFloat(state.amount)) && parseFloat(state.amount) > 0 && (
-              <div class="mt-2 bg-amber-50 rounded-2xl p-2.5 border border-amber-200 text-xs font-bold text-amber-900 flex items-center justify-between">
-                <div class="flex items-center gap-1.5">
-                  <SvgIcon name="swap" size={14} class="text-amber-600" />
-                  <span>{t(lang, 'tx.converted_preview')} ({currentAccount.name}) :</span>
+              {/* Items List */}
+              <div class="space-y-2 pt-1">
+                <div class="grid grid-cols-12 gap-2 px-1 text-[10px] font-black uppercase text-amber-800/80">
+                  <div class="col-span-6 sm:col-span-7">Article</div>
+                  <div class="col-span-4 sm:col-span-3">Prix unitaire</div>
+                  <div class="col-span-2 sm:col-span-2 text-center">Qté</div>
                 </div>
-                <span class="text-amber-950 font-black">
-                  {formatMoney(
-                    convertCurrency(parseFloat(state.amount), state.currencyCode, currentAccount.currencyCode, state.rates),
-                    currentAccount.currencyCode,
-                    lang === 'en' ? 'en-US' : 'fr-FR'
-                  )}
+
+                {state.groupItems.map((item, idx) => (
+                  <div key={item.id} class="grid grid-cols-12 gap-2 items-center bg-white p-2 rounded-2xl border border-amber-200/80 shadow-2xs">
+                    <div class="col-span-6 sm:col-span-7">
+                      <input
+                        type="text"
+                        value={item.name}
+                        onInput$={(e: any) => {
+                          item.name = e.target.value;
+                        }}
+                        placeholder={`Article ${idx + 1}`}
+                        class="w-full text-xs font-bold text-slate-800 px-2.5 py-1.5 rounded-xl border border-amber-200 focus:border-amber-400 focus:outline-none bg-amber-50/20"
+                      />
+                    </div>
+
+                    <div class="col-span-4 sm:col-span-3">
+                      <input
+                        type="number"
+                        step="any"
+                        value={item.amount}
+                        onInput$={(e: any) => {
+                          item.amount = e.target.value;
+                          recomputeGroupTotal$();
+                        }}
+                        placeholder="0.00"
+                        class="w-full text-xs font-black text-amber-950 px-2.5 py-1.5 rounded-xl border border-amber-200 focus:border-amber-400 focus:outline-none bg-amber-50/20"
+                      />
+                    </div>
+
+                    <div class="col-span-2 sm:col-span-2 flex items-center gap-1 justify-end">
+                      <input
+                        type="number"
+                        min="1"
+                        value={item.quantity}
+                        onInput$={(e: any) => {
+                          item.quantity = e.target.value;
+                          recomputeGroupTotal$();
+                        }}
+                        placeholder="1"
+                        class="w-10 text-center text-xs font-bold text-slate-800 px-1 py-1.5 rounded-xl border border-amber-200 focus:border-amber-400 focus:outline-none bg-amber-50/20"
+                      />
+                      {state.groupItems.length > 1 && (
+                        <button
+                          type="button"
+                          onClick$={() => handleRemoveItem$(idx)}
+                          class="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                          title="Supprimer cet élément"
+                        >
+                          <SvgIcon name="trash" size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add item button & Total bar */}
+              <div class="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 border-t border-amber-200">
+                <button
+                  type="button"
+                  onClick$={handleAddItem$}
+                  class="px-3.5 py-2 rounded-xl border-2 border-dashed border-amber-400 hover:bg-amber-100 text-amber-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <SvgIcon name="plus" size={13} />
+                  <span>Ajouter un article</span>
+                </button>
+
+                <div class="bg-amber-100/90 px-4 py-2 rounded-2xl flex items-center justify-between sm:justify-end gap-3 text-xs font-black text-amber-950">
+                  <span class="text-amber-800 text-[11px]">Total du groupe :</span>
+                  <span class="text-base font-black text-amber-950">
+                    {formatMoney(parseFloat(state.amount) || 0, state.currencyCode, lang === 'en' ? 'en-US' : 'fr-FR')}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-xs font-bold text-amber-900">
+                  {t(lang, 'tx.amount')}
+                </label>
+                <span class="text-[11px] font-semibold text-slate-500">
+                  Devise de saisie
                 </span>
               </div>
-            )}
-          </div>
 
-          {/* Description */}
-          <div>
-            <label class="block text-xs font-bold text-amber-900 mb-1">
-              {t(lang, 'tx.label')}
-            </label>
-            <input
-              type="text"
-              value={state.label}
-              onInput$={(e: any) => (state.label = e.target.value)}
-              placeholder="Ex: Courses au marché, Restaurant, Salaire..."
-              class="w-full text-sm font-semibold text-slate-800 px-4 py-2.5 rounded-2xl border-2 border-amber-200 focus:border-amber-400 focus:outline-none bg-amber-50/20"
-            />
-          </div>
+              <div class="flex items-center gap-2">
+                <div class="relative flex-1">
+                  <input
+                    type="number"
+                    step="any"
+                    value={state.amount}
+                    onInput$={(e: any) => (state.amount = e.target.value)}
+                    placeholder="0.00"
+                    class="w-full text-2xl font-black text-amber-950 px-4 py-2.5 rounded-2xl border-2 border-amber-200 focus:border-amber-400 focus:outline-none bg-amber-50/30"
+                  />
+                </div>
+                <select
+                  value={state.currencyCode}
+                  onChange$={(e: any) => (state.currencyCode = e.target.value)}
+                  class="text-xs font-black text-slate-800 px-3 py-3 rounded-2xl border-2 border-amber-200 focus:border-amber-400 focus:outline-none bg-white cursor-pointer self-stretch"
+                >
+                  {SUPPORTED_CURRENCIES.map((cur) => (
+                    <option key={cur.code} value={cur.code}>
+                      {`${cur.code} (${cur.symbol})`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Live conversion preview if different from account's currency */}
+              {currentAccount && state.currencyCode !== currentAccount.currencyCode && !isNaN(parseFloat(state.amount)) && parseFloat(state.amount) > 0 && (
+                <div class="mt-2 bg-amber-50 rounded-2xl p-2.5 border border-amber-200 text-xs font-bold text-amber-900 flex items-center justify-between">
+                  <div class="flex items-center gap-1.5">
+                    <SvgIcon name="swap" size={14} class="text-amber-600" />
+                    <span>{t(lang, 'tx.converted_preview')} ({currentAccount.name}) :</span>
+                  </div>
+                  <span class="text-amber-950 font-black">
+                    {formatMoney(
+                      convertCurrency(parseFloat(state.amount), state.currencyCode, currentAccount.currencyCode, state.rates),
+                      currentAccount.currencyCode,
+                      lang === 'en' ? 'en-US' : 'fr-FR'
+                    )}
+                  </span>
+                </div>
+              )}
+
+              {/* Description */}
+              <div class="mt-3">
+                <label class="block text-xs font-bold text-amber-900 mb-1">
+                  {t(lang, 'tx.label')}
+                </label>
+                <input
+                  type="text"
+                  value={state.label}
+                  onInput$={(e: any) => (state.label = e.target.value)}
+                  placeholder="Ex: Courses au marché, Restaurant, Salaire..."
+                  class="w-full text-sm font-semibold text-slate-800 px-4 py-2.5 rounded-2xl border-2 border-amber-200 focus:border-amber-400 focus:outline-none bg-amber-50/20"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Account Selection */}
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">

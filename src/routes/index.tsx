@@ -325,11 +325,18 @@ export default component$(() => {
                       class="w-10 h-10 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-xs"
                       style={{ backgroundColor: cat?.color || '#F59E0B' }}
                     >
-                      <SvgIcon name={cat?.iconSvg || 'tag'} size={18} />
+                      <SvgIcon name={tx.isGroup ? 'tag' : (cat?.iconSvg || 'tag')} size={18} />
                     </div>
                     <div>
-                      <div class="text-xs font-black text-slate-800 truncate max-w-[180px] sm:max-w-xs">
-                        {tx.label}
+                      <div class="flex items-center gap-1.5 flex-wrap">
+                        <span class="text-xs font-black text-slate-800 truncate max-w-[150px] sm:max-w-xs">
+                          {tx.label}
+                        </span>
+                        {tx.isGroup && tx.items && tx.items.length > 0 && (
+                          <span class="px-1.5 py-0.2 rounded-md bg-amber-100 text-amber-900 text-[10px] font-black">
+                            {tx.items.length} art.
+                          </span>
+                        )}
                       </div>
                       <div class="text-[11px] font-semibold text-slate-500 flex items-center flex-wrap gap-1.5 mt-0.5">
                         <span>{tx.date.split(' ')[0]}</span>

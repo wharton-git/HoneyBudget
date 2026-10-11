@@ -20,16 +20,25 @@ export interface Category {
   iconSvg: string;
 }
 
+export interface GroupItem {
+  id?: string;
+  name: string;
+  amount: number;
+  quantity?: number;
+}
+
 export interface Transaction {
   id?: number;
   accountId: number;
   amount: number; // always positive in storage; type tells if it's expense/income/transfer
-  date: string; // YYYY-MM-DD
+  date: string; // YYYY-MM-DD or YYYY-MM-DD HH:mm
   categoryId: number;
   label: string;
   notes?: string;
   type: 'expense' | 'income' | 'transfer';
   targetAccountId?: number; // for transfers
+  isGroup?: boolean;
+  items?: GroupItem[];
 }
 
 export interface CurrencyRecord {
@@ -80,8 +89,8 @@ export const initDatabase = async (forceReset: boolean = false) => {
   const currentSettings = await db.settings.get('current');
   const count = await db.accounts.count();
 
-  // If first run or if legacy test data detected (seedVersion !== 4)
-  if (forceReset || count === 0 || !currentSettings || currentSettings.seedVersion !== 4) {
+  // If first run or if legacy test data detected (seedVersion !== 5)
+  if (forceReset || count === 0 || !currentSettings || currentSettings.seedVersion !== 5) {
     const {
       REAL_SETTINGS,
       REAL_ACCOUNTS,

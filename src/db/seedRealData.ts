@@ -8,7 +8,7 @@ export const REAL_SETTINGS: AppSettingsRecord = {
   theme: 'honey-mga-real',
   rates: DEFAULT_RATES_FROM_EUR,
   lastRatesUpdate: new Date().toISOString(),
-  seedVersion: 4,
+  seedVersion: 5,
 };
 
 export const REAL_ACCOUNTS: Account[] = [
@@ -5179,30 +5179,52 @@ export const REAL_TRANSACTIONS: Transaction[] = [
     "accountId": 2,
     "categoryId": 44,
     "amount": 25000.0,
-    "date": "2026-10-08",
+    "date": "2026-10-08 22:18",
     "label": "Side job",
-    "type": "income",
-    "notes": "22:18"
-  }
-,
+    "type": "income"
+  },
   {
     "id": 475,
     "accountId": 1,
     "categoryId": 14,
     "amount": 8500.0,
-    "date": "2026-10-09",
+    "date": "2026-10-09 11:50",
     "label": "Achat Souris",
-    "notes": "Souris: 6 000 Ar, Frais livraison: 2 500 Ar (11:50)",
-    "type": "expense"
+    "type": "expense",
+    "isGroup": true,
+    "items": [
+      { "id": "1", "name": "Souris", "amount": 6000.0 },
+      { "id": "2", "name": "Frais livraison", "amount": 2500.0 }
+    ]
   },
   {
     "id": 476,
     "accountId": 1,
     "categoryId": 15,
     "amount": 2000.0,
-    "date": "2026-10-09",
+    "date": "2026-10-09 13:00",
     "label": "Déjeuner",
-    "notes": "Déjeuner (13:00)",
+    "type": "expense"
+  },
+  {
+    "id": 484,
+    "accountId": 4,
+    "targetAccountId": 3,
+    "categoryId": 45,
+    "amount": 9800.0,
+    "date": "2026-10-09 14:00",
+    "label": "Transfert vers Orange Money",
+    "notes": "De Orange Money 2",
+    "type": "transfer"
+  },
+  {
+    "id": 485,
+    "accountId": 4,
+    "categoryId": 45,
+    "amount": 200.0,
+    "date": "2026-10-09 14:00",
+    "label": "Frais transfert OM 2",
+    "notes": "Frais transfert vers OM",
     "type": "expense"
   },
   {
@@ -5211,9 +5233,9 @@ export const REAL_TRANSACTIONS: Transaction[] = [
     "targetAccountId": 5,
     "categoryId": 45,
     "amount": 25000.0,
-    "date": "2026-10-09",
+    "date": "2026-10-09 15:00",
     "label": "Transfert vers Redotpay",
-    "notes": "Reçu 5.00 $ sur Redotpay (1$ frais) (15:00)",
+    "notes": "Reçu 5.00 $ sur Redotpay (1$ frais)",
     "type": "transfer"
   },
   {
@@ -5221,9 +5243,9 @@ export const REAL_TRANSACTIONS: Transaction[] = [
     "accountId": 5,
     "categoryId": 11,
     "amount": 3.0,
-    "date": "2026-10-09",
+    "date": "2026-10-09 15:30",
     "label": "SMSpool",
-    "notes": "Crédit SMS 3$ (15:30)",
+    "notes": "Crédit SMS (3.00 $)",
     "type": "expense"
   },
   {
@@ -5231,9 +5253,9 @@ export const REAL_TRANSACTIONS: Transaction[] = [
     "accountId": 2,
     "categoryId": 45,
     "amount": 20000.0,
-    "date": "2026-10-09",
+    "date": "2026-10-09 17:25",
     "label": "Transfert Harena M",
-    "notes": "Envoi vers Harena M (17:25)",
+    "notes": "Envoi vers Harena M",
     "type": "expense"
   },
   {
@@ -5241,9 +5263,9 @@ export const REAL_TRANSACTIONS: Transaction[] = [
     "accountId": 2,
     "categoryId": 45,
     "amount": 250.0,
-    "date": "2026-10-09",
+    "date": "2026-10-09 17:25",
     "label": "Frais transfert Mvola",
-    "notes": "Frais envoi Harena M (17:25)",
+    "notes": "Frais envoi Harena M",
     "type": "expense"
   },
   {
@@ -5251,9 +5273,9 @@ export const REAL_TRANSACTIONS: Transaction[] = [
     "accountId": 1,
     "categoryId": 41,
     "amount": 20500.0,
-    "date": "2026-10-09",
+    "date": "2026-10-09 17:27",
     "label": "Reçu de Harena",
-    "notes": "Espèces reçues de Harena M (17:27)",
+    "notes": "Espèces reçues de Harena M",
     "type": "income"
   },
   {
@@ -5261,51 +5283,38 @@ export const REAL_TRANSACTIONS: Transaction[] = [
     "accountId": 1,
     "categoryId": 15,
     "amount": 10000.0,
-    "date": "2026-10-09",
+    "date": "2026-10-09 18:00",
     "label": "Resto",
-    "notes": "PatteSeche au poulet: 7 000 Ar, Tacos simple: 3 000 Ar (18:00)",
-    "type": "expense"
+    "type": "expense",
+    "isGroup": true,
+    "items": [
+      { "id": "1", "name": "PatteSeche au poulet", "amount": 7000.0 },
+      { "id": "2", "name": "Tacos simple", "amount": 3000.0 }
+    ]
   },
   {
     "id": 483,
     "accountId": 2,
     "categoryId": 15,
     "amount": 33000.0,
-    "date": "2026-10-09",
+    "date": "2026-10-09 19:00",
     "label": "Score",
-    "notes": "Vin Blanc: 24 000 Ar, Gourde: 6 000 Ar, Achard Sakoa: 3 000 Ar (19:00)",
-    "type": "expense"
-  }
-,
-  {
-    "id": 484,
-    "accountId": 4,
-    "targetAccountId": 3,
-    "categoryId": 45,
-    "amount": 9800.0,
-    "date": "2026-10-09",
-    "label": "Transfert vers Orange Money",
-    "notes": "De Orange Money 2 (14:00)",
-    "type": "transfer"
-  },
-  {
-    "id": 485,
-    "accountId": 4,
-    "categoryId": 45,
-    "amount": 200.0,
-    "date": "2026-10-09",
-    "label": "Frais transfert OM 2",
-    "notes": "Frais transfert vers OM (14:00)",
-    "type": "expense"
+    "type": "expense",
+    "isGroup": true,
+    "items": [
+      { "id": "1", "name": "Vin Blanc", "amount": 24000.0 },
+      { "id": "2", "name": "Gourde", "amount": 6000.0 },
+      { "id": "3", "name": "Achard Sakoa", "amount": 3000.0 }
+    ]
   },
   {
     "id": 486,
     "accountId": 3,
     "categoryId": 40,
     "amount": 40000.0,
-    "date": "2026-10-09",
+    "date": "2026-10-09 21:00",
     "label": "Reçu de Maman",
-    "notes": "Motif Forfait (21:00)",
+    "notes": "Motif Forfait",
     "type": "income"
   },
   {
@@ -5313,9 +5322,9 @@ export const REAL_TRANSACTIONS: Transaction[] = [
     "accountId": 1,
     "categoryId": 8,
     "amount": 600.0,
-    "date": "2026-10-10",
+    "date": "2026-10-10 11:00",
     "label": "Bus 120",
-    "notes": "Analakely - Ivandry (11:00)",
+    "notes": "Analakely - Ivandry",
     "type": "expense"
   },
   {
@@ -5323,20 +5332,29 @@ export const REAL_TRANSACTIONS: Transaction[] = [
     "accountId": 3,
     "categoryId": 33,
     "amount": 25000.0,
-    "date": "2026-10-10",
+    "date": "2026-10-10 11:30",
     "label": "Super U Ivandry",
-    "notes": "Yao Framboise 5 000 Ar x2 (10 000 Ar), Chocolat noir 100% (15 000 Ar) (11:30)",
-    "type": "expense"
+    "type": "expense",
+    "isGroup": true,
+    "items": [
+      { "id": "1", "name": "Yao Framboise (x2)", "amount": 10000.0, "quantity": 2 },
+      { "id": "2", "name": "Chocolat noir 100%", "amount": 15000.0, "quantity": 1 }
+    ]
   },
   {
     "id": 489,
     "accountId": 1,
     "categoryId": 5,
     "amount": 9100.0,
-    "date": "2026-10-10",
+    "date": "2026-10-10 15:10",
     "label": "Super U Analakely",
-    "notes": "Eau Volvic: 2 100 Ar, Sprite 1.5L: 4 000 Ar, Yaourt à boire Itty 1 000 Ar x3: 3 000 Ar (15:10)",
-    "type": "expense"
+    "type": "expense",
+    "isGroup": true,
+    "items": [
+      { "id": "1", "name": "Eau Volvic", "amount": 2100.0 },
+      { "id": "2", "name": "Sprite 1.5L", "amount": 4000.0 },
+      { "id": "3", "name": "Yaourt à boire Itty (x3)", "amount": 3000.0, "quantity": 3 }
+    ]
   },
   {
     "id": 490,
@@ -5344,9 +5362,9 @@ export const REAL_TRANSACTIONS: Transaction[] = [
     "targetAccountId": 1,
     "categoryId": 45,
     "amount": 27000.0,
-    "date": "2026-10-10",
+    "date": "2026-10-10 17:20",
     "label": "Retrait vers Cash",
-    "notes": "Retrait Orange Money (17:20)",
+    "notes": "Retrait Orange Money",
     "type": "transfer"
   },
   {
@@ -5354,9 +5372,9 @@ export const REAL_TRANSACTIONS: Transaction[] = [
     "accountId": 1,
     "categoryId": 31,
     "amount": 20000.0,
-    "date": "2026-10-10",
+    "date": "2026-10-10 17:22",
     "label": "Remboursement Finoana",
-    "notes": "Remboursement Finoana (17:22)",
+    "notes": "Remboursement Finoana",
     "type": "expense"
   },
   {
@@ -5364,9 +5382,9 @@ export const REAL_TRANSACTIONS: Transaction[] = [
     "accountId": 2,
     "categoryId": 41,
     "amount": 50000.0,
-    "date": "2026-10-10",
+    "date": "2026-10-10 20:30",
     "label": "Reçu de Fenosoa",
-    "notes": "Reçu de Fenosoa (20:30)",
+    "notes": "Reçu de Fenosoa",
     "type": "income"
   },
   {
@@ -5374,9 +5392,9 @@ export const REAL_TRANSACTIONS: Transaction[] = [
     "accountId": 5,
     "categoryId": 11,
     "amount": 1.5,
-    "date": "2026-10-10",
+    "date": "2026-10-10 20:45",
     "label": "Achat en ligne",
-    "notes": "Achat (1.50$) (20:45)",
+    "notes": "Achat (1.50 $)",
     "type": "expense"
   },
   {
@@ -5385,9 +5403,9 @@ export const REAL_TRANSACTIONS: Transaction[] = [
     "targetAccountId": 5,
     "categoryId": 45,
     "amount": 25000.0,
-    "date": "2026-10-10",
+    "date": "2026-10-10 21:00",
     "label": "Transfert vers Redotpay",
-    "notes": "Reçu 5.00 $ sur Redotpay (1$ frais) (21:00)",
+    "notes": "Reçu 5.00 $ sur Redotpay (1$ frais)",
     "type": "transfer"
   },
   {
@@ -5395,9 +5413,12 @@ export const REAL_TRANSACTIONS: Transaction[] = [
     "accountId": 5,
     "categoryId": 11,
     "amount": 4.5,
-    "date": "2026-10-10",
+    "date": "2026-10-10 21:04",
     "label": "Achat en ligne",
-    "notes": "Achat 1.50$ x3 (4.50$) (21:04)",
-    "type": "expense"
+    "type": "expense",
+    "isGroup": true,
+    "items": [
+      { "id": "1", "name": "Achat Redotpay (x3)", "amount": 4.5, "quantity": 3 }
+    ]
   }
 ];

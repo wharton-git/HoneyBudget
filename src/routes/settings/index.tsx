@@ -3,7 +3,8 @@ import type { DocumentHead } from '@builder.io/qwik-city';
 import { useI18n, t, translate } from '../../i18n/context';
 import { SvgIcon } from '../../components/icons/SvgIcon';
 import { HoneyMascotSvg } from '../../components/illustrations/HoneyMascotSvg';
-import { db } from '../../db';
+import { db, initDatabase } from '../../db';
+
 import {
   SUPPORTED_CURRENCIES,
   fetchLiveRates,
@@ -103,8 +104,21 @@ export default component$(() => {
     }
   });
 
+  const handleReloadRealData$ = $(async () => {
+
+    if (confirm('Voulez-vous réinitialiser HoneyBudget avec les 474 opérations réelles de data.csv ?')) {
+      await initDatabase(true);
+      await loadSettings$();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('honey_currency_changed', { detail: { baseCurrency: 'MGA' } }));
+      }
+      state.statusMessage = 'Données réelles (data.csv) chargées avec succès ! (474 opérations)';
+      state.statusType = 'success';
+    }
+  });
 
   const handleSaveToDrive$ = $(async () => {
+
     state.statusMessage = '';
     try {
       const res = await saveBackupWithoutGCP(state.passphrase);
@@ -364,7 +378,30 @@ export default component$(() => {
             />
           </label>
         </div>
+
+        {/* Reload data.csv */}
+        <div class="pt-3 border-t border-amber-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <div class="text-xs font-black text-amber-950 flex items-center gap-1.5">
+              <SvgIcon name="refresh" size={14} class="text-amber-600" />
+              <span>Données Réelles (data.csv)</span>
+            </div>
+            <p class="text-[11px] text-slate-500">
+              474 opérations réelles et 5 comptes (Cash, Mvola, Orange Money...)
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick$={handleReloadRealData$}
+            class="px-4 py-2 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <SvgIcon name="refresh" size={13} />
+            <span>Recharger data.csv</span>
+          </button>
+        </div>
       </div>
+
+
 
       {/* 4. About HoneyBudget */}
       <div class="bg-amber-50/50 rounded-3xl p-5 border-2 border-amber-200/60 flex items-center gap-4">

@@ -3,7 +3,6 @@ import type { DocumentHead } from '@builder.io/qwik-city';
 import { useI18n, t } from '../i18n/context';
 import { SvgIcon } from '../components/icons/SvgIcon';
 import { HoneyMascotSvg } from '../components/illustrations/HoneyMascotSvg';
-import { TransactionModal } from '../components/transactions/TransactionModal';
 import { db, type Account, type Category, type Transaction } from '../db';
 import { formatMoney, convertCurrency } from '../services/currency/ratesService';
 
@@ -20,8 +19,6 @@ export default component$(() => {
     monthlyIncome: 0,
     monthlyExpense: 0,
     categoryExpenses: [] as { category: Category; amount: number; percentage: number }[],
-    isTxModalOpen: false,
-    editingTx: null as Transaction | null,
   });
 
   const loadDashboardData$ = $(async () => {
@@ -176,19 +173,15 @@ export default component$(() => {
 
       {/* Quick Add Action Button */}
       <div class="flex justify-center">
-        <button
-          type="button"
-          onClick$={() => {
-            state.editingTx = null;
-            state.isTxModalOpen = true;
-          }}
+        <a
+          href="/transactions/new/"
           class="flex items-center gap-2 px-6 py-3 rounded-full bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-sm shadow-md active:scale-95 transition-all cursor-pointer"
         >
           <div class="w-6 h-6 rounded-full bg-amber-950 text-amber-300 flex items-center justify-center">
             <SvgIcon name="plus" size={14} class="stroke-3" />
           </div>
           <span>{t(lang, 'dashboard.quick_add')}</span>
-        </button>
+        </a>
       </div>
 
       {/* Accounts Carousel / Preview */}
@@ -383,13 +376,6 @@ export default component$(() => {
         )}
       </div>
 
-      {/* Transaction Modal */}
-      <TransactionModal
-        isOpen={state.isTxModalOpen}
-        editTransaction={state.editingTx}
-        onClose$={$(() => (state.isTxModalOpen = false))}
-        onSaved$={loadDashboardData$}
-      />
     </div>
   );
 });

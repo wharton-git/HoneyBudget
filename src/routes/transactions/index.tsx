@@ -2,7 +2,6 @@ import { component$, useStore, useVisibleTask$, $ } from '@builder.io/qwik';
 import type { DocumentHead } from '@builder.io/qwik-city';
 import { useI18n, t } from '../../i18n/context';
 import { SvgIcon } from '../../components/icons/SvgIcon';
-import { TransactionModal } from '../../components/transactions/TransactionModal';
 import { db, type Account, type Category, type Transaction } from '../../db';
 import { formatMoney, convertCurrency, getCurrencyDecimals } from '../../services/currency/ratesService';
 
@@ -21,8 +20,6 @@ export default component$(() => {
     expandedGroupIds: [] as number[],
     selectedTxIds: [] as number[],
     isMultiSelectMode: false,
-    isTxModalOpen: false,
-    editingTx: null as Transaction | null,
   });
 
   const loadData$ = $(async () => {
@@ -204,17 +201,13 @@ export default component$(() => {
             <span>{state.isMultiSelectMode ? 'Annuler' : 'Grouper'}</span>
           </button>
 
-          <button
-            type="button"
-            onClick$={() => {
-              state.editingTx = null;
-              state.isTxModalOpen = true;
-            }}
+          <a
+            href="/transactions/new/"
             class="flex items-center gap-1.5 px-4 py-2 rounded-full bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold text-xs shadow-xs active:scale-95 transition-all cursor-pointer"
           >
             <SvgIcon name="plus" size={14} />
             <span>{t(lang, 'tx.new')}</span>
-          </button>
+          </a>
         </div>
       </div>
 
@@ -410,17 +403,13 @@ export default component$(() => {
                     </div>
 
                     <div class="flex items-center gap-0.5">
-                      <button
-                        type="button"
-                        onClick$={() => {
-                          state.editingTx = tx;
-                          state.isTxModalOpen = true;
-                        }}
+                      <a
+                        href={`/transactions/new/?id=${tx.id}`}
                         class="p-1.5 rounded-full hover:bg-amber-100 text-amber-800 transition-colors cursor-pointer"
                         title={t(lang, 'common.edit')}
                       >
                         <SvgIcon name="edit" size={14} />
-                      </button>
+                      </a>
                       <button
                         type="button"
                         onClick$={() => handleDelete$(tx)}
@@ -486,14 +475,6 @@ export default component$(() => {
           })}
         </div>
       )}
-
-      {/* Transaction Modal */}
-      <TransactionModal
-        isOpen={state.isTxModalOpen}
-        editTransaction={state.editingTx}
-        onClose$={$(() => (state.isTxModalOpen = false))}
-        onSaved$={loadData$}
-      />
     </div>
   );
 });

@@ -27,10 +27,19 @@ export default component$(() => {
   });
 
   // eslint-disable-next-line qwik/no-use-visible-task
-  useVisibleTask$(async () => {
+  useVisibleTask$(({ cleanup }) => {
     state.lang = lang;
-    await loadAccounts$();
+    loadAccounts$();
+
+    const onCurrencyChanged = () => {
+      loadAccounts$();
+    };
+    window.addEventListener('honey_currency_changed', onCurrencyChanged);
+    cleanup(() => {
+      window.removeEventListener('honey_currency_changed', onCurrencyChanged);
+    });
   });
+
 
   const handleDelete$ = $(async (id: number) => {
     if (confirm(translate(state.lang, 'accounts.delete_confirm'))) {
@@ -70,7 +79,7 @@ export default component$(() => {
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         {state.accounts.map((acc) => {
           const isDifferent = acc.currencyCode !== state.baseCurrency;
-          const converted = convertCurrency(acc.balance, acc.currencyCode, state.baseCurrency, state.rates, state.baseCurrency);
+          const converted = convertCurrency(acc.balance, acc.currencyCode, state.baseCurrency, state.rates);
 
           return (
             <div

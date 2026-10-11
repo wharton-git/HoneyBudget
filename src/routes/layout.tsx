@@ -19,7 +19,7 @@ export default component$(() => {
 
   // Client-side initialization
   // eslint-disable-next-line qwik/no-use-visible-task
-  useVisibleTask$(async () => {
+  useVisibleTask$(async ({ cleanup }) => {
     // Check saved language
     const savedLang = localStorage.getItem('honey_lang') as Language;
     if (savedLang && (savedLang === 'fr' || savedLang === 'en')) {
@@ -38,7 +38,18 @@ export default component$(() => {
     }
 
     state.ready = true;
+
+    const onCurrencyChanged = (e: any) => {
+      if (e.detail?.baseCurrency) {
+        state.baseCurrency = e.detail.baseCurrency;
+      }
+    };
+    window.addEventListener('honey_currency_changed', onCurrencyChanged);
+    cleanup(() => {
+      window.removeEventListener('honey_currency_changed', onCurrencyChanged);
+    });
   });
+
 
   return (
     <div class="min-h-screen bg-[#FFFDF7] text-slate-800 flex flex-col font-sans selection:bg-amber-200 selection:text-amber-950 pb-24">

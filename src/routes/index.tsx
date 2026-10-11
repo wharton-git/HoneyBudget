@@ -41,7 +41,7 @@ export default component$(() => {
     // Calculate total net worth converted to baseCurrency
     let totalNet = 0;
     accounts.forEach((acc) => {
-      const converted = convertCurrency(acc.balance, acc.currencyCode, baseCur, ratesMap, baseCur);
+      const converted = convertCurrency(acc.balance, acc.currencyCode, baseCur, ratesMap);
       totalNet += converted;
     });
     state.totalConsolidatedBalance = totalNet;
@@ -65,7 +65,7 @@ export default component$(() => {
       if (tx.date.startsWith(curYearMonth)) {
         const acc = accounts.find((a) => a.id === tx.accountId);
         const accCur = acc?.currencyCode || baseCur;
-        const inBase = convertCurrency(tx.amount, accCur, baseCur, ratesMap, baseCur);
+        const inBase = convertCurrency(tx.amount, accCur, baseCur, ratesMap);
 
         if (tx.type === 'income') {
           income += inBase;
@@ -97,9 +97,18 @@ export default component$(() => {
   });
 
   // eslint-disable-next-line qwik/no-use-visible-task
-  useVisibleTask$(async () => {
-    await loadDashboardData$();
+  useVisibleTask$(({ cleanup }) => {
+    loadDashboardData$();
+
+    const onCurrencyChanged = () => {
+      loadDashboardData$();
+    };
+    window.addEventListener('honey_currency_changed', onCurrencyChanged);
+    cleanup(() => {
+      window.removeEventListener('honey_currency_changed', onCurrencyChanged);
+    });
   });
+
 
   const getAccount = (id: number) => state.accounts.find((a) => a.id === id);
   const getCategory = (id: number) => state.categories.find((c) => c.id === id);
@@ -209,7 +218,7 @@ export default component$(() => {
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {state.accounts.map((acc) => {
             const isDifferent = acc.currencyCode !== state.baseCurrency;
-            const converted = convertCurrency(acc.balance, acc.currencyCode, state.baseCurrency, state.rates, state.baseCurrency);
+            const converted = convertCurrency(acc.balance, acc.currencyCode, state.baseCurrency, state.rates);
             return (
               <div
                 key={acc.id}
@@ -352,7 +361,18 @@ export default component$(() => {
                       {isIncome ? '+' : isTransfer ? '' : '-'}
                       {formatMoney(tx.amount, acc?.currencyCode || 'EUR', lang === 'en' ? 'en-US' : 'fr-FR')}
                     </div>
+                    {acc && acc.currencyCode !== state.baseCurrency && (
+                      <div class="text-[10px] font-bold text-amber-700/90 mt-0.5">
+                        ≈ {isIncome ? '+' : isTransfer ? '' : '-'}
+                        {formatMoney(
+                          convertCurrency(tx.amount, acc.currencyCode, state.baseCurrency, state.rates),
+                          state.baseCurrency,
+                          lang === 'en' ? 'en-US' : 'fr-FR'
+                        )}
+                      </div>
+                    )}
                   </div>
+
                 </div>
               );
             })}

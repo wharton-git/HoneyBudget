@@ -54,6 +54,7 @@ export const fr: Translations = {
   'accounts.from_account': 'Compte Source',
   'accounts.to_account': 'Compte Bénéficiaire',
   'accounts.delete_confirm': 'Êtes-vous sûr de vouloir supprimer ce compte ? Ses opérations seront conservées.',
+  'accounts.convert_transactions_tip': 'Le solde et toutes les opérations de ce compte seront automatiquement convertis vers la nouvelle devise.',
 
   // Transactions
   'tx.title': 'Historique des Opérations',
@@ -72,6 +73,7 @@ export const fr: Translations = {
   'tx.filter_all': 'Toutes les catégories',
   'tx.search_placeholder': 'Rechercher une opération...',
   'tx.empty': 'Aucune opération trouvée avec ces critères',
+  'tx.converted_preview': 'Équivalent débité sur le compte',
 
   // Categories & Budgets
   'cat.title': 'Budgets & Catégories',
@@ -124,4 +126,7 @@ export const fr: Translations = {
   'settings.backup_settings': 'Sauvegarde & Données',
   'settings.about_title': 'À propos de HoneyBudget',
   'settings.about_desc': 'Application PWA autonome, sécurisée et respectueuse de la vie privée. Vos données restent exclusivement sur votre appareil et dans vos sauvegardes.',
+  'settings.convert_budgets': 'Recalculer les plafonds de budget vers cette devise',
+  'settings.budgets_converted_success': 'Plafonds de budgets convertis avec succès !',
 };
+

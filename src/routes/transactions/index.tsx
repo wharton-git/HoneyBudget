@@ -4,7 +4,7 @@ import { useI18n, t } from '../../i18n/context';
 import { SvgIcon } from '../../components/icons/SvgIcon';
 import { TransactionModal } from '../../components/transactions/TransactionModal';
 import { db, type Account, type Category, type Transaction } from '../../db';
-import { formatMoney } from '../../services/currency/ratesService';
+import { formatMoney, convertCurrency } from '../../services/currency/ratesService';
 
 export default component$(() => {
   const { lang } = useI18n();
@@ -13,6 +13,8 @@ export default component$(() => {
     transactions: [] as Transaction[],
     accounts: [] as Account[],
     categories: [] as Category[],
+    baseCurrency: 'EUR',
+    rates: {} as Record<string, number>,
     filterType: 'all' as 'all' | 'expense' | 'income' | 'transfer',
     searchQuery: '',
     selectedAccountId: 0,
@@ -21,6 +23,10 @@ export default component$(() => {
   });
 
   const loadData$ = $(async () => {
+    const settings = await db.settings.get('current');
+    state.baseCurrency = settings?.baseCurrency || 'EUR';
+    state.rates = settings?.rates || {};
+
     state.accounts = await db.accounts.toArray();
     state.categories = await db.categories.toArray();
 
@@ -30,9 +36,18 @@ export default component$(() => {
   });
 
   // eslint-disable-next-line qwik/no-use-visible-task
-  useVisibleTask$(async () => {
-    await loadData$();
+  useVisibleTask$(({ cleanup }) => {
+    loadData$();
+
+    const onCurrencyChanged = () => {
+      loadData$();
+    };
+    window.addEventListener('honey_currency_changed', onCurrencyChanged);
+    cleanup(() => {
+      window.removeEventListener('honey_currency_changed', onCurrencyChanged);
+    });
   });
+
 
   const handleDelete$ = $(async (tx: Transaction) => {
     if (confirm('Voulez-vous supprimer cette opération ?')) {
@@ -209,7 +224,18 @@ export default component$(() => {
                       {isIncome ? '+' : isTransfer ? '' : '-'}
                       {formatMoney(tx.amount, acc?.currencyCode || 'EUR', lang === 'en' ? 'en-US' : 'fr-FR')}
                     </div>
+                    {acc && acc.currencyCode !== state.baseCurrency && (
+                      <div class="text-[11px] font-bold text-amber-700/90 mt-0.5">
+                        ≈ {isIncome ? '+' : isTransfer ? '' : '-'}
+                        {formatMoney(
+                          convertCurrency(tx.amount, acc.currencyCode, state.baseCurrency, state.rates),
+                          state.baseCurrency,
+                          lang === 'en' ? 'en-US' : 'fr-FR'
+                        )}
+                      </div>
+                    )}
                   </div>
+
 
                   <div class="flex items-center gap-0.5">
                     <button

@@ -38,7 +38,7 @@ export default component$(() => {
     allTx.forEach((tx) => {
       if (tx.type === 'expense' && tx.date.startsWith(curYearMonth)) {
         const acc = accounts.find((a) => a.id === tx.accountId);
-        const inBase = convertCurrency(tx.amount, acc?.currencyCode || baseCur, baseCur, ratesMap, baseCur);
+        const inBase = convertCurrency(tx.amount, acc?.currencyCode || baseCur, baseCur, ratesMap);
         spent[tx.categoryId] = (spent[tx.categoryId] || 0) + inBase;
       }
     });
@@ -46,9 +46,18 @@ export default component$(() => {
   });
 
   // eslint-disable-next-line qwik/no-use-visible-task
-  useVisibleTask$(async () => {
-    await loadData$();
+  useVisibleTask$(({ cleanup }) => {
+    loadData$();
+
+    const onCurrencyChanged = () => {
+      loadData$();
+    };
+    window.addEventListener('honey_currency_changed', onCurrencyChanged);
+    cleanup(() => {
+      window.removeEventListener('honey_currency_changed', onCurrencyChanged);
+    });
   });
+
 
   const handleSaveBudget$ = $(async () => {
     if (!state.editingCat) return;

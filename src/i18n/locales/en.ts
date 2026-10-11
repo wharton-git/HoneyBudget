@@ -54,6 +54,7 @@ export const en: Translations = {
   'accounts.from_account': 'Source Account',
   'accounts.to_account': 'Target Account',
   'accounts.delete_confirm': 'Are you sure you want to delete this account? Existing transactions will be preserved.',
+  'accounts.convert_transactions_tip': 'The balance and all transactions for this account will be automatically converted to the new currency.',
 
   // Transactions
   'tx.title': 'Transactions History',
@@ -72,6 +73,7 @@ export const en: Translations = {
   'tx.filter_all': 'All categories',
   'tx.search_placeholder': 'Search transactions...',
   'tx.empty': 'No transactions found with these filters',
+  'tx.converted_preview': 'Equivalent debited on account',
 
   // Categories & Budgets
   'cat.title': 'Budgets & Categories',
@@ -124,4 +126,7 @@ export const en: Translations = {
   'settings.backup_settings': 'Backup & Data',
   'settings.about_title': 'About HoneyBudget',
   'settings.about_desc': 'Autonomous, secure, and privacy-first PWA. Your financial data stays exclusively on your device and inside your backups.',
+  'settings.convert_budgets': 'Recalculate category budget limits to this currency',
+  'settings.budgets_converted_success': 'Budget limits converted successfully!',
 };
+

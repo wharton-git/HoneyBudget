@@ -2,7 +2,7 @@ import { component$, useStore, $, useVisibleTask$, type PropFunction } from '@bu
 import { useI18n, t } from '../../i18n/context';
 import { SvgIcon } from '../icons/SvgIcon';
 import { db, type Account } from '../../db';
-import { SUPPORTED_CURRENCIES } from '../../services/currency/ratesService';
+import { SUPPORTED_CURRENCIES, convertCurrency, getCurrencyDecimals } from '../../services/currency/ratesService';
 
 interface AccountModalProps {
   isOpen: boolean;
@@ -34,12 +34,16 @@ export const AccountModal = component$<AccountModalProps>(({ isOpen, onClose$, o
     color: '#F59E0B',
     iconSvg: 'wallet',
     loading: false,
+    rates: {} as Record<string, number>,
   });
 
   // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(async ({ track }) => {
     track(() => isOpen);
     if (!isOpen) return;
+
+    const settings = await db.settings.get('current');
+    state.rates = settings?.rates || {};
 
     if (editAccount) {
       state.name = editAccount.name;
@@ -51,11 +55,21 @@ export const AccountModal = component$<AccountModalProps>(({ isOpen, onClose$, o
     } else {
       state.name = '';
       state.type = 'checking';
-      state.currencyCode = 'EUR';
+      state.currencyCode = settings?.baseCurrency || 'EUR';
       state.balance = '0';
       state.color = '#F59E0B';
       state.iconSvg = 'wallet';
     }
+  });
+
+  const handleCurrencyChange$ = $((newCode: string) => {
+    const currentVal = parseFloat(state.balance);
+    if (!isNaN(currentVal) && currentVal !== 0 && state.currencyCode !== newCode) {
+      const converted = convertCurrency(currentVal, state.currencyCode, newCode, state.rates);
+      const decimals = getCurrencyDecimals(newCode);
+      state.balance = decimals === 0 ? String(Math.round(converted)) : converted.toFixed(decimals);
+    }
+    state.currencyCode = newCode;
   });
 
   const handleSubmit$ = $(async () => {
@@ -68,6 +82,19 @@ export const AccountModal = component$<AccountModalProps>(({ isOpen, onClose$, o
 
     try {
       if (editAccount) {
+        // If currency changed, convert all transactions belonging to this account
+        if (state.currencyCode !== editAccount.currencyCode) {
+          const txs = await db.transactions.where('accountId').equals(editAccount.id!).toArray();
+          const decimals = getCurrencyDecimals(state.currencyCode);
+          for (const tx of txs) {
+            const convertedAmt = convertCurrency(tx.amount, editAccount.currencyCode, state.currencyCode, state.rates);
+            const roundedAmt = decimals === 0 ? Math.round(convertedAmt) : Math.round(convertedAmt * 100) / 100;
+            await db.transactions.update(tx.id!, {
+              amount: roundedAmt,
+            });
+          }
+        }
+
         await db.accounts.update(editAccount.id!, {
           name: state.name.trim(),
           type: state.type,
@@ -95,6 +122,7 @@ export const AccountModal = component$<AccountModalProps>(({ isOpen, onClose$, o
       state.loading = false;
     }
   });
+
 
   if (!isOpen) return null;
 
@@ -189,7 +217,7 @@ export const AccountModal = component$<AccountModalProps>(({ isOpen, onClose$, o
               </label>
               <select
                 value={state.currencyCode}
-                onChange$={(e: any) => (state.currencyCode = e.target.value)}
+                onChange$={(e: any) => handleCurrencyChange$(e.target.value)}
                 class="w-full text-sm font-semibold text-slate-800 px-3 py-2.5 rounded-2xl border-2 border-amber-200 focus:border-amber-400 focus:outline-none bg-white"
               >
                 {SUPPORTED_CURRENCIES.map((cur) => (
@@ -214,7 +242,15 @@ export const AccountModal = component$<AccountModalProps>(({ isOpen, onClose$, o
                 class="w-full text-sm font-bold text-slate-800 px-3 py-2.5 rounded-2xl border-2 border-amber-200 focus:border-amber-400 focus:outline-none bg-white"
               />
             </div>
+
+            {editAccount && state.currencyCode !== editAccount.currencyCode && (
+              <div class="col-span-2 bg-amber-50 rounded-2xl p-3 border border-amber-200 text-[11px] font-bold text-amber-900 flex items-center gap-2">
+                <SvgIcon name="info" size={16} class="text-amber-600 shrink-0" />
+                <span>{t(lang, 'accounts.convert_transactions_tip')}</span>
+              </div>
+            )}
           </div>
+
 
           {/* Color Picker */}
           <div>

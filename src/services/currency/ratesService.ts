@@ -57,38 +57,43 @@ export const formatMoney = (amount: number, currencyCode: string, locale: string
 };
 
 /**
- * Convert an amount from fromCurrency to toCurrency given a base currency and exchange rates relative to that base.
+ * Convert an amount from fromCurrency to toCurrency.
+ * All rates are anchored to EUR (1 EUR = rates[code] code).
  */
 export const convertCurrency = (
   amount: number,
   fromCode: string,
   toCode: string,
-  rates: Record<string, number>,
-  baseCode: string = 'EUR'
+  rates?: Record<string, number>
 ): number => {
-  if (fromCode === toCode) return amount;
-  if (amount === 0) return 0;
+  if (!fromCode || !toCode || fromCode === toCode || amount === 0) {
+    return amount;
+  }
 
-  // Rate of code relative to baseCode: 1 baseCode = rate[code] code
-  const fromRate = fromCode === baseCode ? 1.0 : (rates[fromCode] || DEFAULT_RATES_FROM_EUR[fromCode] || 1.0);
-  const toRate = toCode === baseCode ? 1.0 : (rates[toCode] || DEFAULT_RATES_FROM_EUR[toCode] || 1.0);
+  const ratesMap = rates && Object.keys(rates).length > 0 ? rates : DEFAULT_RATES_FROM_EUR;
+  const rateFrom = ratesMap[fromCode] || DEFAULT_RATES_FROM_EUR[fromCode] || 1.0;
+  const rateTo = ratesMap[toCode] || DEFAULT_RATES_FROM_EUR[toCode] || 1.0;
 
-  // amount in base:
-  const amountInBase = amount / fromRate;
-  // amount in target:
-  return amountInBase * toRate;
+  if (rateFrom <= 0) return amount;
+  return (amount / rateFrom) * rateTo;
 };
 
 /**
  * Fetch latest rates from open free exchange rate API (No API key needed)
+ * Always anchored to EUR so rates in DB remain uniformly normalized.
  */
-export const fetchLiveRates = async (baseCurrency: string = 'EUR'): Promise<Record<string, number> | null> => {
+export const fetchLiveRates = async (): Promise<Record<string, number> | null> => {
   try {
-    const res = await fetch(`https://open.er-api.com/v6/latest/${baseCurrency}`);
+    const res = await fetch('https://open.er-api.com/v6/latest/EUR');
+
     if (res.ok) {
       const data = await res.json();
       if (data && data.rates) {
-        return data.rates as Record<string, number>;
+        return {
+          ...DEFAULT_RATES_FROM_EUR,
+          ...data.rates,
+          EUR: 1.0,
+        } as Record<string, number>;
       }
     }
   } catch (err) {
@@ -97,13 +102,14 @@ export const fetchLiveRates = async (baseCurrency: string = 'EUR'): Promise<Reco
 
   // Fallback endpoint: frankfurter
   try {
-    const res = await fetch(`https://api.frankfurter.dev/v1/latest?base=${baseCurrency}`);
+    const res = await fetch('https://api.frankfurter.dev/v1/latest?base=EUR');
     if (res.ok) {
       const data = await res.json();
       if (data && data.rates) {
         return {
+          ...DEFAULT_RATES_FROM_EUR,
           ...data.rates,
-          [baseCurrency]: 1.0,
+          EUR: 1.0,
         };
       }
     }
@@ -113,3 +119,4 @@ export const fetchLiveRates = async (baseCurrency: string = 'EUR'): Promise<Reco
 
   return null;
 };
+

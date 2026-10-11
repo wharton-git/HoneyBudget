@@ -54,6 +54,7 @@ export interface Translations {
   'accounts.from_account': string;
   'accounts.to_account': string;
   'accounts.delete_confirm': string;
+  'accounts.convert_transactions_tip': string;
 
   // Transactions
   'tx.title': string;
@@ -72,6 +73,7 @@ export interface Translations {
   'tx.filter_all': string;
   'tx.search_placeholder': string;
   'tx.empty': string;
+  'tx.converted_preview': string;
 
   // Categories & Budgets
   'cat.title': string;
@@ -124,4 +126,7 @@ export interface Translations {
   'settings.backup_settings': string;
   'settings.about_title': string;
   'settings.about_desc': string;
+  'settings.convert_budgets': string;
+  'settings.budgets_converted_success': string;
 }
+

@@ -2,6 +2,12 @@ import { component$, useStore, $, useVisibleTask$, type PropFunction } from '@bu
 import { useI18n, t } from '../../i18n/context';
 import { SvgIcon } from '../icons/SvgIcon';
 import { db, type Account, type Category, type Transaction } from '../../db';
+import {
+  SUPPORTED_CURRENCIES,
+  convertCurrency,
+  getCurrencyDecimals,
+  formatMoney,
+} from '../../services/currency/ratesService';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -19,6 +25,8 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
     targetAccountId: 0,
     categoryId: 0,
     amount: '',
+    currencyCode: 'EUR',
+    rates: {} as Record<string, number>,
     date: new Date().toISOString().split('T')[0],
     label: '',
     notes: '',
@@ -32,7 +40,11 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
     track(() => isOpen);
     if (!isOpen) return;
 
-    state.accounts = await db.accounts.toArray();
+    const settings = await db.settings.get('current');
+    state.rates = settings?.rates || {};
+
+    const accounts = await db.accounts.toArray();
+    state.accounts = accounts;
     state.categories = await db.categories.toArray();
 
     if (editTransaction) {
@@ -41,6 +53,8 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
       state.targetAccountId = editTransaction.targetAccountId || 0;
       state.categoryId = editTransaction.categoryId;
       state.amount = String(editTransaction.amount);
+      const acc = accounts.find((a) => a.id === editTransaction.accountId);
+      state.currencyCode = acc?.currencyCode || settings?.baseCurrency || 'EUR';
       state.date = editTransaction.date;
       state.label = editTransaction.label;
       state.notes = editTransaction.notes || '';
@@ -50,9 +64,12 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
       state.label = '';
       state.notes = '';
       state.date = new Date().toISOString().split('T')[0];
-      if (state.accounts.length > 0) {
-        state.accountId = state.accounts[0].id!;
-        state.targetAccountId = state.accounts.length > 1 ? state.accounts[1].id! : state.accounts[0].id!;
+      if (accounts.length > 0) {
+        state.accountId = accounts[0].id!;
+        state.currencyCode = accounts[0].currencyCode;
+        state.targetAccountId = accounts.length > 1 ? accounts[1].id! : accounts[0].id!;
+      } else {
+        state.currencyCode = settings?.baseCurrency || 'EUR';
       }
       if (state.categories.length > 0) {
         state.categoryId = state.categories[0].id!;
@@ -60,9 +77,18 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
     }
   });
 
+  const handleAccountChange$ = $((accId: number) => {
+    const oldAcc = state.accounts.find((a) => a.id === state.accountId);
+    const newAcc = state.accounts.find((a) => a.id === accId);
+    state.accountId = accId;
+    if (newAcc && oldAcc && state.currencyCode === oldAcc.currencyCode) {
+      state.currencyCode = newAcc.currencyCode;
+    }
+  });
+
   const handleSubmit$ = $(async () => {
-    const val = parseFloat(state.amount);
-    if (isNaN(val) || val <= 0 || !state.label.trim() || !state.accountId) {
+    const rawVal = parseFloat(state.amount);
+    if (isNaN(rawVal) || rawVal <= 0 || !state.label.trim() || !state.accountId) {
       return;
     }
 
@@ -72,9 +98,41 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
       const selectedAccount = await db.accounts.get(state.accountId);
       if (!selectedAccount) return;
 
-      // Handle balance delta
+      // Convert rawVal to account's native currency if different
+      let val = rawVal;
+      let notes = state.notes.trim();
+
+      if (state.currencyCode !== selectedAccount.currencyCode) {
+        const convertedVal = convertCurrency(rawVal, state.currencyCode, selectedAccount.currencyCode, state.rates);
+        const decimals = getCurrencyDecimals(selectedAccount.currencyCode);
+        val = decimals === 0 ? Math.round(convertedVal) : Math.round(convertedVal * 100) / 100;
+
+        const noteAddition = `(${rawVal} ${state.currencyCode})`;
+        if (!notes.includes(noteAddition)) {
+          notes = notes ? `${notes} ${noteAddition}` : noteAddition;
+        }
+      }
+
+      // Revert previous transaction impact if editing
+      if (editTransaction) {
+        const prevAcc = await db.accounts.get(editTransaction.accountId);
+        if (prevAcc) {
+          if (editTransaction.type === 'expense') {
+            await db.accounts.update(prevAcc.id!, { balance: prevAcc.balance + editTransaction.amount });
+          } else if (editTransaction.type === 'income') {
+            await db.accounts.update(prevAcc.id!, { balance: prevAcc.balance - editTransaction.amount });
+          } else if (editTransaction.type === 'transfer' && editTransaction.targetAccountId) {
+            const prevTarget = await db.accounts.get(editTransaction.targetAccountId);
+            await db.accounts.update(prevAcc.id!, { balance: prevAcc.balance + editTransaction.amount });
+            if (prevTarget) {
+              await db.accounts.update(prevTarget.id!, { balance: prevTarget.balance - editTransaction.amount });
+            }
+          }
+        }
+      }
+
+      // Apply new / updated transaction
       if (!editTransaction) {
-        // Add new
         await db.transactions.add({
           accountId: state.accountId,
           targetAccountId: state.type === 'transfer' ? state.targetAccountId : undefined,
@@ -82,31 +140,10 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
           amount: val,
           date: state.date,
           label: state.label.trim(),
-          notes: state.notes.trim() || undefined,
+          notes: notes || undefined,
           type: state.type,
         });
-
-        if (state.type === 'expense') {
-          await db.accounts.update(state.accountId, {
-            balance: selectedAccount.balance - val,
-          });
-        } else if (state.type === 'income') {
-          await db.accounts.update(state.accountId, {
-            balance: selectedAccount.balance + val,
-          });
-        } else if (state.type === 'transfer') {
-          const targetAccount = await db.accounts.get(state.targetAccountId);
-          if (targetAccount) {
-            await db.accounts.update(state.accountId, {
-              balance: selectedAccount.balance - val,
-            });
-            await db.accounts.update(state.targetAccountId, {
-              balance: targetAccount.balance + val,
-            });
-          }
-        }
       } else {
-        // Edit existing
         await db.transactions.update(editTransaction.id!, {
           accountId: state.accountId,
           targetAccountId: state.type === 'transfer' ? state.targetAccountId : undefined,
@@ -114,9 +151,33 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
           amount: val,
           date: state.date,
           label: state.label.trim(),
-          notes: state.notes.trim() || undefined,
+          notes: notes || undefined,
           type: state.type,
         });
+      }
+
+      // Apply new balance delta
+      const updatedAcc = await db.accounts.get(state.accountId);
+      if (updatedAcc) {
+        if (state.type === 'expense') {
+          await db.accounts.update(state.accountId, {
+            balance: updatedAcc.balance - val,
+          });
+        } else if (state.type === 'income') {
+          await db.accounts.update(state.accountId, {
+            balance: updatedAcc.balance + val,
+          });
+        } else if (state.type === 'transfer') {
+          const targetAccount = await db.accounts.get(state.targetAccountId);
+          if (targetAccount) {
+            await db.accounts.update(state.accountId, {
+              balance: updatedAcc.balance - val,
+            });
+            await db.accounts.update(state.targetAccountId, {
+              balance: targetAccount.balance + val,
+            });
+          }
+        }
       }
 
       await onSaved$();
@@ -131,7 +192,7 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
   if (!isOpen) return null;
 
   const currentAccount = state.accounts.find((a) => a.id === state.accountId);
-  const currencySymbol = currentAccount?.currencyCode || 'EUR';
+
 
   return (
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-amber-950/40 backdrop-blur-xs">
@@ -199,21 +260,58 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
 
         {/* Form */}
         <div class="space-y-4 mt-5">
-          {/* Amount */}
+          {/* Amount & Currency */}
           <div>
-            <label class="block text-xs font-bold text-amber-900 mb-1">
-              {t(lang, 'tx.amount')} ({currencySymbol})
-            </label>
-            <div class="relative">
-              <input
-                type="number"
-                step="any"
-                value={state.amount}
-                onInput$={(e: any) => (state.amount = e.target.value)}
-                placeholder="0.00"
-                class="w-full text-2xl font-black text-amber-950 px-4 py-3 rounded-2xl border-2 border-amber-200 focus:border-amber-400 focus:outline-none bg-amber-50/30"
-              />
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-xs font-bold text-amber-900">
+                {t(lang, 'tx.amount')}
+              </label>
+              <span class="text-[11px] font-semibold text-slate-500">
+                Devise de saisie
+              </span>
             </div>
+
+            <div class="flex items-center gap-2">
+              <div class="relative flex-1">
+                <input
+                  type="number"
+                  step="any"
+                  value={state.amount}
+                  onInput$={(e: any) => (state.amount = e.target.value)}
+                  placeholder="0.00"
+                  class="w-full text-2xl font-black text-amber-950 px-4 py-2.5 rounded-2xl border-2 border-amber-200 focus:border-amber-400 focus:outline-none bg-amber-50/30"
+                />
+              </div>
+              <select
+                value={state.currencyCode}
+                onChange$={(e: any) => (state.currencyCode = e.target.value)}
+                class="text-xs font-black text-slate-800 px-3 py-3 rounded-2xl border-2 border-amber-200 focus:border-amber-400 focus:outline-none bg-white cursor-pointer self-stretch"
+              >
+                {SUPPORTED_CURRENCIES.map((cur) => (
+                  <option key={cur.code} value={cur.code}>
+                    {`${cur.code} (${cur.symbol})`}
+                  </option>
+                ))}
+
+              </select>
+            </div>
+
+            {/* Live conversion preview if different from account's currency */}
+            {currentAccount && state.currencyCode !== currentAccount.currencyCode && !isNaN(parseFloat(state.amount)) && parseFloat(state.amount) > 0 && (
+              <div class="mt-2 bg-amber-50 rounded-2xl p-2.5 border border-amber-200 text-xs font-bold text-amber-900 flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                  <SvgIcon name="swap" size={14} class="text-amber-600" />
+                  <span>{t(lang, 'tx.converted_preview')} ({currentAccount.name}) :</span>
+                </div>
+                <span class="text-amber-950 font-black">
+                  {formatMoney(
+                    convertCurrency(parseFloat(state.amount), state.currencyCode, currentAccount.currencyCode, state.rates),
+                    currentAccount.currencyCode,
+                    lang === 'en' ? 'en-US' : 'fr-FR'
+                  )}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Description */}
@@ -238,9 +336,10 @@ export const TransactionModal = component$<TransactionModalProps>(({ isOpen, onC
               </label>
               <select
                 value={state.accountId}
-                onChange$={(e: any) => (state.accountId = parseInt(e.target.value, 10))}
+                onChange$={(e: any) => handleAccountChange$(parseInt(e.target.value, 10))}
                 class="w-full text-sm font-semibold text-slate-800 px-3 py-2.5 rounded-2xl border-2 border-amber-200 focus:border-amber-400 focus:outline-none bg-white"
               >
+
                 {state.accounts.map((a) => (
                   <option key={a.id} value={a.id}>
                     {`${a.name} (${a.currencyCode})`}

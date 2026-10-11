@@ -7,6 +7,8 @@ import { db } from '../../db';
 import {
   SUPPORTED_CURRENCIES,
   fetchLiveRates,
+  convertCurrency,
+  getCurrencyDecimals,
 } from '../../services/currency/ratesService';
 import {
   saveBackupWithoutGCP,
@@ -49,7 +51,24 @@ export default component$(() => {
   const handleBaseCurrencyChange$ = $(async (newCur: string) => {
     state.baseCurrency = newCur;
     await db.settings.update('current', { baseCurrency: newCur });
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('honey_currency_changed', { detail: { baseCurrency: newCur } }));
+    }
     state.statusMessage = `${translate(state.lang, 'currency.base_currency')} : ${newCur}`;
+    state.statusType = 'success';
+  });
+
+  const handleConvertBudgets$ = $(async () => {
+    const cats = await db.categories.toArray();
+    for (const cat of cats) {
+      if (cat.budgetLimit > 0) {
+        const converted = convertCurrency(cat.budgetLimit, 'EUR', state.baseCurrency, state.rates);
+        const decimals = getCurrencyDecimals(state.baseCurrency);
+        const rounded = decimals === 0 ? Math.round(converted) : Math.round(converted * 100) / 100;
+        await db.categories.update(cat.id!, { budgetLimit: rounded });
+      }
+    }
+    state.statusMessage = translate(state.lang, 'settings.budgets_converted_success');
     state.statusType = 'success';
   });
 
@@ -57,7 +76,7 @@ export default component$(() => {
     state.isUpdatingRates = true;
     state.statusMessage = '';
     try {
-      const liveRates = await fetchLiveRates(state.baseCurrency);
+      const liveRates = await fetchLiveRates();
       if (liveRates) {
         state.rates = liveRates;
         const now = new Date().toISOString();
@@ -66,6 +85,9 @@ export default component$(() => {
           rates: liveRates,
           lastRatesUpdate: now,
         });
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('honey_currency_changed', { detail: { baseCurrency: state.baseCurrency } }));
+        }
         state.statusMessage = 'Taux de change actualisés avec succès !';
         state.statusType = 'success';
       } else {
@@ -80,6 +102,7 @@ export default component$(() => {
       state.isUpdatingRates = false;
     }
   });
+
 
   const handleSaveToDrive$ = $(async () => {
     state.statusMessage = '';
@@ -242,6 +265,17 @@ export default component$(() => {
           </select>
         </div>
 
+        <div class="flex items-center justify-between pt-1">
+          <button
+            type="button"
+            onClick$={handleConvertBudgets$}
+            class="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl border-2 border-amber-300 hover:bg-amber-50 text-amber-900 font-bold text-xs transition-colors cursor-pointer"
+          >
+            <SvgIcon name="pie-chart" size={14} class="text-amber-600" />
+            <span>{t(lang, 'settings.convert_budgets')}</span>
+          </button>
+        </div>
+
         <div class="bg-amber-50/60 rounded-2xl p-3 border border-amber-100 text-xs font-semibold text-amber-900">
           <p>{t(lang, 'currency.rate_info')}</p>
           <p class="text-[11px] text-amber-700/80 mt-1">
@@ -249,6 +283,7 @@ export default component$(() => {
           </p>
         </div>
       </div>
+
 
       {/* 3. Google Drive Backup & Restore (Zero GCP) */}
       <div class="bg-white rounded-3xl p-5 border-2 border-amber-100 shadow-xs space-y-4">

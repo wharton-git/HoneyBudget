@@ -16,7 +16,7 @@ RUN pnpm install --frozen-lockfile --ignore-scripts
 COPY . .
 
 # Build production client and server bundles
-RUN pnpm run build
+RUN pnpm run build:node
 
 # Prune development dependencies to retain only production dependencies
 RUN pnpm prune --prod --ignore-scripts

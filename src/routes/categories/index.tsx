@@ -114,7 +114,7 @@ export default component$(() => {
                       <div class="text-[11px] font-semibold text-slate-500 mt-0.5">
                         {limit > 0
                           ? `${t(lang, 'cat.budget_limit')} : ${formatMoney(limit, state.baseCurrency, lang === 'en' ? 'en-US' : 'fr-FR')}`
-                          : 'Aucun plafond défini'}
+                          : t(lang, 'cat.no_limit')}
                       </div>
                     </div>
                   </div>
@@ -184,7 +184,7 @@ export default component$(() => {
           <div class="bg-white rounded-3xl border-2 border-amber-200 shadow-2xl max-w-sm w-full p-6 space-y-4">
             <div class="flex items-center justify-between pb-2 border-b border-amber-100">
               <h3 class="text-base font-black text-amber-950">
-                Plafond : {t(lang, state.editingCat.nameKey as any) || state.editingCat.nameKey}
+                {t(lang, 'cat.budget_limit')} : {t(lang, state.editingCat.nameKey as any) || state.editingCat.nameKey}
               </h3>
               <button
                 type="button"

@@ -134,15 +134,15 @@ export default component$(() => {
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('honey_currency_changed', { detail: { baseCurrency: state.baseCurrency } }));
         }
-        state.statusMessage = 'Taux de change actualisés avec succès !';
+        state.statusMessage = translate(state.lang, 'settings.rates_refresh_success');
         state.statusType = 'success';
       } else {
-        state.statusMessage = 'Impossible de contacter le serveur de taux (mode hors-ligne). Taux existants conservés.';
+        state.statusMessage = translate(state.lang, 'settings.rates_offline_warning');
         state.statusType = 'error';
       }
     } catch (e) {
       console.error(e);
-      state.statusMessage = 'Erreur lors de la récupération des taux.';
+      state.statusMessage = translate(state.lang, 'settings.rates_fetch_error');
       state.statusType = 'error';
     } finally {
       state.isUpdatingRates = false;
@@ -150,20 +150,20 @@ export default component$(() => {
   });
 
   const handleResetAppData$ = $(async () => {
-    if (confirm('Voulez-vous réinitialiser les données locales de l\'application (remise à zéro des comptes et opérations locaux) ?')) {
+    if (confirm(translate(state.lang, 'settings.reset_confirm'))) {
       await initDatabase(true);
       await loadSettings$();
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('honey_currency_changed', { detail: { baseCurrency: state.baseCurrency } }));
       }
-      state.statusMessage = 'Application réinitialisée avec les modèles par défaut.';
+      state.statusMessage = translate(state.lang, 'settings.reset_success');
       state.statusType = 'success';
     }
   });
 
   const handleSignIn$ = $(async () => {
     if (!state.authEmail || !state.authPassword) {
-      state.statusMessage = 'Veuillez saisir votre email et mot de passe.';
+      state.statusMessage = translate(state.lang, 'settings.auth_credentials_required');
       state.statusType = 'error';
       return;
     }
@@ -174,14 +174,14 @@ export default component$(() => {
       if (res.user) {
         state.userId = res.user.id;
         state.userEmail = res.user.email || '';
-        state.statusMessage = `Connecté en tant que ${res.user.email}`;
+        state.statusMessage = `${translate(state.lang, 'settings.signed_in_as')} ${res.user.email}`;
         state.statusType = 'success';
         // Auto sync after login
         state.isSyncing = true;
         try {
           const syncRes = await syncWithSupabase(res.user.id);
           state.lastSyncTime = syncRes.timestamp;
-          state.statusMessage = `Connecté ! Données synchronisées avec succès.`;
+          state.statusMessage = translate(state.lang, 'settings.login_success');
           await loadSettings$();
         } catch (syncErr: any) {
           console.warn('Sync warning:', syncErr);
@@ -191,7 +191,7 @@ export default component$(() => {
       }
     } catch (e: any) {
       console.error(e);
-      state.statusMessage = e.message || 'Erreur lors de la connexion.';
+      state.statusMessage = e.message || translate(state.lang, 'settings.login_error');
       state.statusType = 'error';
     } finally {
       state.isAuthLoading = false;
@@ -200,7 +200,7 @@ export default component$(() => {
 
   const handleSignUp$ = $(async () => {
     if (!state.authEmail || !state.authPassword) {
-      state.statusMessage = 'Veuillez saisir votre email et mot de passe.';
+      state.statusMessage = translate(state.lang, 'settings.auth_credentials_required');
       state.statusType = 'error';
       return;
     }
@@ -211,14 +211,14 @@ export default component$(() => {
       if (res.user) {
         state.userId = res.user.id;
         state.userEmail = res.user.email || '';
-        state.statusMessage = `Compte créé ! Initialisation de votre espace sécurisé...`;
+        state.statusMessage = translate(state.lang, 'settings.signup_init');
         state.statusType = 'success';
         // Initial sync to upload existing local data into user's isolated cloud store
         state.isSyncing = true;
         try {
           const syncRes = await pushLocalToSupabase(res.user.id);
           state.lastSyncTime = new Date().toISOString();
-          state.statusMessage = `Compte créé et ${syncRes.transactions} opérations sauvegardées sur Supabase !`;
+          state.statusMessage = `${translate(state.lang, 'settings.signup_success')} (${syncRes.transactions})`;
         } catch (syncErr: any) {
           console.warn('Initial push error:', syncErr);
         } finally {
@@ -227,7 +227,7 @@ export default component$(() => {
       }
     } catch (e: any) {
       console.error(e);
-      state.statusMessage = e.message || 'Erreur lors de la création du compte.';
+      state.statusMessage = e.message || translate(state.lang, 'settings.signup_error');
       state.statusType = 'error';
     } finally {
       state.isAuthLoading = false;
@@ -241,11 +241,11 @@ export default component$(() => {
       await signOutUser();
       state.userId = '';
       state.userEmail = '';
-      state.statusMessage = 'Déconnecté de Supabase. Vos données locales restent conservées hors-ligne.';
+      state.statusMessage = translate(state.lang, 'settings.signout_success');
       state.statusType = 'success';
     } catch (e: any) {
       console.error(e);
-      state.statusMessage = e.message || 'Erreur lors de la déconnexion.';
+      state.statusMessage = e.message || translate(state.lang, 'settings.signout_error');
       state.statusType = 'error';
     } finally {
       state.isAuthLoading = false;
@@ -278,11 +278,11 @@ export default component$(() => {
     try {
       const res = await pushLocalToSupabase(state.userId);
       state.lastSyncTime = new Date().toISOString();
-      state.statusMessage = `${res.transactions} opérations envoyées vers votre cloud Supabase !`;
+      state.statusMessage = `${res.transactions} ${translate(state.lang, 'settings.sync_push_success')}`;
       state.statusType = 'success';
     } catch (e: any) {
       console.error(e);
-      state.statusMessage = e.message || 'Erreur lors de l\'envoi vers le cloud.';
+      state.statusMessage = e.message || translate(state.lang, 'settings.sync_push_error');
       state.statusType = 'error';
     } finally {
       state.isSyncing = false;
@@ -296,7 +296,7 @@ export default component$(() => {
     try {
       const res = await pullRemoteFromSupabase(state.userId);
       state.lastSyncTime = new Date().toISOString();
-      state.statusMessage = `${res.transactions} opérations récupérées depuis votre cloud Supabase !`;
+      state.statusMessage = `${res.transactions} ${translate(state.lang, 'settings.sync_pull_success')}`;
       state.statusType = 'success';
       await loadSettings$();
       if (typeof window !== 'undefined') {
@@ -304,7 +304,7 @@ export default component$(() => {
       }
     } catch (e: any) {
       console.error(e);
-      state.statusMessage = e.message || 'Erreur lors de la récupération depuis le cloud.';
+      state.statusMessage = e.message || translate(state.lang, 'settings.sync_pull_error');
       state.statusType = 'error';
     } finally {
       state.isSyncing = false;
@@ -510,7 +510,7 @@ export default component$(() => {
                   <div class="text-xs font-black text-amber-950">{state.userEmail}</div>
                   <div class="text-[10px] font-semibold text-emerald-700 flex items-center gap-1">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
-                    <span>Isolation RLS active</span>
+                    <span>{t(lang, 'settings.rls_active')}</span>
                   </div>
                 </div>
               </div>
@@ -652,7 +652,7 @@ export default component$(() => {
         <div class="flex items-center justify-between">
           <h3 class="text-sm font-black text-amber-950 flex items-center gap-2">
             <SvgIcon name="download" size={18} class="text-amber-600" />
-            <span>Sauvegarde Locale (Fichier JSON)</span>
+            <span>{t(lang, 'settings.local_backup_json')}</span>
           </h3>
           <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900">
             Export / Import
@@ -698,14 +698,14 @@ export default component$(() => {
 
         {/* Reset App */}
         <div class="pt-3 border-t border-amber-100 flex items-center justify-between">
-          <span class="text-xs font-bold text-slate-600">Réinitialisation</span>
+          <span class="text-xs font-bold text-slate-600">{t(lang, 'settings.reset_title')}</span>
           <button
             type="button"
             onClick$={handleResetAppData$}
             class="px-3.5 py-2 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-900 font-bold text-xs transition-colors cursor-pointer flex items-center gap-1.5"
           >
             <SvgIcon name="refresh" size={13} />
-            <span>Remettre à zéro (local)</span>
+            <span>{t(lang, 'settings.reset_button')}</span>
           </button>
         </div>
       </div>
@@ -714,7 +714,7 @@ export default component$(() => {
       <div class="bg-amber-50/50 rounded-3xl p-4 border border-amber-200/60 flex items-center gap-3">
         <HoneyMascotSvg size={36} class="shrink-0" />
         <div class="text-xs font-bold text-amber-950">
-          HoneyBudget • 100% PWA & Sécurisé
+          {t(lang, 'settings.about_footer')}
         </div>
       </div>
 
@@ -725,7 +725,7 @@ export default component$(() => {
             <div class="flex items-center justify-between pb-2 border-b border-amber-100">
               <h3 class="text-sm font-black text-amber-950 flex items-center gap-1.5">
                 <SvgIcon name="shield" size={16} class="text-amber-600" />
-                <span>Sauvegarde chiffrée</span>
+                <span>{t(lang, 'settings.encrypted_backup')}</span>
               </h3>
               <button
                 type="button"
@@ -737,14 +737,14 @@ export default component$(() => {
             </div>
 
             <p class="text-xs font-semibold text-slate-600">
-              Ce fichier est protégé par mot de passe. Veuillez entrer la phrase secrète pour le déverrouiller.
+              {t(lang, 'settings.decrypt_prompt')}
             </p>
 
             <input
               type="password"
               value={state.restorePassphrase}
               onInput$={(e: any) => (state.restorePassphrase = e.target.value)}
-              placeholder="Mot de passe de déchiffrement"
+              placeholder={t(lang, 'settings.decrypt_placeholder')}
               class="w-full text-xs font-semibold text-slate-800 px-3.5 py-2.5 rounded-2xl border-2 border-amber-200 focus:border-amber-400 focus:outline-none bg-amber-50/20"
             />
 
@@ -761,7 +761,7 @@ export default component$(() => {
                 onClick$={handleConfirmDecryptRestore$}
                 class="px-5 py-2 text-xs font-black rounded-2xl bg-amber-400 hover:bg-amber-500 text-amber-950 shadow-md cursor-pointer"
               >
-                Restaurer
+                {t(lang, 'settings.restore_button')}
               </button>
             </div>
           </div>

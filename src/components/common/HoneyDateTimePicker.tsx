@@ -1,4 +1,5 @@
 import { component$, useStore, $, useVisibleTask$, type PropFunction } from '@builder.io/qwik';
+import { useI18n, t } from '../../i18n/context';
 import { SvgIcon } from '../icons/SvgIcon';
 import { ConcentricClockModal } from './ConcentricClockModal';
 
@@ -7,7 +8,13 @@ const MONTH_NAMES_FR = [
   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
 ];
 
+const MONTH_NAMES_EN = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
 const WEEK_DAYS_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+const WEEK_DAYS_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 interface HoneyDateTimePickerProps {
   value: string; // "YYYY-MM-DD" or "YYYY-MM-DD HH:mm"
@@ -70,7 +77,11 @@ export const formatTimeAmPm = (tStr?: string): string => {
   return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${period}`;
 };
 
-export const HoneyDateTimePicker = component$<HoneyDateTimePickerProps>(({ value, onChange$, label = 'Date et heure' }) => {
+export const HoneyDateTimePicker = component$<HoneyDateTimePickerProps>(({ value, onChange$, label }) => {
+  const { lang } = useI18n();
+  const monthNames = lang === 'en' ? MONTH_NAMES_EN : MONTH_NAMES_FR;
+  const weekDays = lang === 'en' ? WEEK_DAYS_EN : WEEK_DAYS_FR;
+
   const initial = parseInitial(value);
 
   const state = useStore({
@@ -200,28 +211,28 @@ export const HoneyDateTimePicker = component$<HoneyDateTimePickerProps>(({ value
 
   let dateLabel = state.selectedDate;
   if (state.selectedDate === todayDateStr) {
-    dateLabel = "Aujourd'hui";
+    dateLabel = t(lang, 'time.today');
   } else if (state.selectedDate === yesterdayDateStr) {
-    dateLabel = 'Hier';
+    dateLabel = t(lang, 'time.yesterday');
   } else if (state.selectedDate) {
     const parts = state.selectedDate.split('-');
     if (parts.length === 3) {
       const d = parseInt(parts[2], 10);
       const m = parseInt(parts[1], 10) - 1;
       const y = parts[0];
-      dateLabel = `${d} ${MONTH_NAMES_FR[m]?.substring(0, 4)}. ${y}`;
+      dateLabel = `${d} ${monthNames[m]?.substring(0, 4)}. ${y}`;
     }
   }
 
   const timeLabel = state.hour && state.minute
     ? formatTimeAmPm(`${state.hour}:${state.minute}`)
-    : 'Sans heure';
+    : t(lang, 'time.no_time');
 
   return (
     <div class="space-y-1.5">
       <div class="flex items-center justify-between">
         <label class="block text-xs font-bold text-amber-900">
-          {label}
+          {label || t(lang, 'tx.date')}
         </label>
         <span class="text-[11px] font-semibold text-slate-500">
           {state.selectedDate}
@@ -263,7 +274,7 @@ export const HoneyDateTimePicker = component$<HoneyDateTimePickerProps>(({ value
           type="button"
           onClick$={() => (state.isTimeModalOpen = true)}
           class="flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl border-2 border-amber-200 bg-white hover:border-amber-400 hover:bg-amber-50/60 text-amber-950 transition-all cursor-pointer shadow-2xs"
-          title="Sélectionner l'heure (double cadran concentrique)"
+          title={t(lang, 'time.select_time')}
         >
           <div class="w-6 h-6 rounded-lg bg-amber-100 flex items-center justify-center text-amber-800">
             <SvgIcon name="clock" size={14} />
@@ -282,14 +293,14 @@ export const HoneyDateTimePicker = component$<HoneyDateTimePickerProps>(({ value
               onClick$={handleSetToday$}
               class="px-2.5 py-1 text-xs font-bold rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 transition-colors"
             >
-              Aujourd'hui
+              {t(lang, 'time.today')}
             </button>
             <button
               type="button"
               onClick$={handleSetYesterday$}
               class="px-2.5 py-1 text-xs font-bold rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 transition-colors"
             >
-              Hier
+              {t(lang, 'time.yesterday')}
             </button>
             <div class="h-4 w-px bg-amber-200 mx-1" />
             <button
@@ -298,7 +309,7 @@ export const HoneyDateTimePicker = component$<HoneyDateTimePickerProps>(({ value
               class="px-2.5 py-1 text-xs font-bold rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition-colors flex items-center gap-1"
             >
               <SvgIcon name="clock" size={11} class="text-amber-600" />
-              <span>Maintenant</span>
+              <span>{t(lang, 'time.now')}</span>
             </button>
           </div>
 
@@ -308,20 +319,20 @@ export const HoneyDateTimePicker = component$<HoneyDateTimePickerProps>(({ value
               type="button"
               onClick$={handlePrevMonth$}
               class="w-8 h-8 rounded-xl hover:bg-amber-100 text-amber-900 flex items-center justify-center transition-colors cursor-pointer"
-              title="Mois précédent"
+              title={t(lang, 'time.prev_month')}
             >
               <SvgIcon name="chevron-left" size={16} />
             </button>
 
             <div class="text-sm font-black text-amber-950">
-              {MONTH_NAMES_FR[state.viewMonth]} {state.viewYear}
+              {monthNames[state.viewMonth]} {state.viewYear}
             </div>
 
             <button
               type="button"
               onClick$={handleNextMonth$}
               class="w-8 h-8 rounded-xl hover:bg-amber-100 text-amber-900 flex items-center justify-center transition-colors cursor-pointer"
-              title="Mois suivant"
+              title={t(lang, 'time.next_month')}
             >
               <SvgIcon name="chevron-right" size={16} />
             </button>
@@ -329,7 +340,7 @@ export const HoneyDateTimePicker = component$<HoneyDateTimePickerProps>(({ value
 
           {/* Weekday headers */}
           <div class="grid grid-cols-7 gap-1 text-center">
-            {WEEK_DAYS_FR.map((d) => (
+            {weekDays.map((d) => (
               <span key={d} class="text-[10px] font-black uppercase text-amber-800/80">
                 {d}
               </span>
@@ -400,7 +411,7 @@ export const HoneyDateTimePicker = component$<HoneyDateTimePickerProps>(({ value
             <div class="flex items-center justify-between">
               <span class="text-xs font-black text-amber-950 flex items-center gap-1.5">
                 <SvgIcon name="clock" size={14} class="text-amber-600" />
-                <span>Heure de l'opération</span>
+                <span>{t(lang, 'time.operation_time')}</span>
               </span>
 
               <div class="flex items-center gap-1.5">
@@ -424,7 +435,7 @@ export const HoneyDateTimePicker = component$<HoneyDateTimePickerProps>(({ value
                     onClick$={handleClearTime$}
                     class="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 cursor-pointer"
                   >
-                    Effacer
+                    {t(lang, 'time.clear_time')}
                   </button>
                 )}
               </div>
@@ -449,7 +460,7 @@ export const HoneyDateTimePicker = component$<HoneyDateTimePickerProps>(({ value
                 </div>
 
                 <div class="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-400 text-amber-950 text-xs font-black shadow-xs">
-                  <span>Régler</span>
+                  <span>{t(lang, 'time.set')}</span>
                   <SvgIcon name="chevron-right" size={12} />
                 </div>
               </button>
@@ -460,7 +471,7 @@ export const HoneyDateTimePicker = component$<HoneyDateTimePickerProps>(({ value
                 class="px-3.5 py-3 rounded-2xl bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-xs shadow-xs active:scale-95 transition-all cursor-pointer flex items-center gap-1 self-stretch"
               >
                 <SvgIcon name="check" size={14} />
-                <span>OK</span>
+                <span>{t(lang, 'common.confirm')}</span>
               </button>
             </div>
           </div>

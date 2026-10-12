@@ -168,19 +168,19 @@ export default component$(() => {
 
     const rawVal = parseFloat(state.amount);
     if (isNaN(rawVal) || rawVal <= 0) {
-      state.errorMessage = 'Veuillez saisir un montant valide supérieur à 0.';
+      state.errorMessage = t(lang, 'tx.error_amount');
       return;
     }
     if (!state.label.trim()) {
-      state.errorMessage = 'Veuillez saisir une description ou une enseigne.';
+      state.errorMessage = t(lang, 'tx.error_label');
       return;
     }
     if (!state.accountId) {
-      state.errorMessage = 'Veuillez sélectionner un compte.';
+      state.errorMessage = t(lang, 'tx.error_account');
       return;
     }
     if (state.type === 'transfer' && state.accountId === state.targetAccountId) {
-      state.errorMessage = 'Les comptes source et destination doivent être différents.';
+      state.errorMessage = t(lang, 'tx.error_same_account');
       return;
     }
 
@@ -189,7 +189,7 @@ export default component$(() => {
     try {
       const selectedAccount = await db.accounts.get(state.accountId);
       if (!selectedAccount) {
-        state.errorMessage = 'Compte introuvable.';
+        state.errorMessage = t(lang, 'tx.error_account_not_found');
         state.loading = false;
         return;
       }
@@ -325,7 +325,7 @@ export default component$(() => {
           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold text-xs transition-colors"
         >
           <SvgIcon name="chevron-left" size={16} />
-          <span>Retour aux opérations</span>
+          <span>{t(lang, 'tx.back_to_list')}</span>
         </a>
 
         <div class="flex items-center gap-2">
@@ -351,7 +351,7 @@ export default component$(() => {
         {/* 1. Type Selector Pills */}
         <div>
           <label class="block text-xs font-bold text-amber-900 mb-2">
-            Type d'opération
+            {t(lang, 'tx.type')}
           </label>
           <div class="grid grid-cols-3 gap-2 p-1.5 bg-amber-50 rounded-2xl border border-amber-200">
             <button
@@ -416,7 +416,7 @@ export default component$(() => {
               }`}
             >
               <SvgIcon name="coin" size={14} class="text-amber-600" />
-              <span>Achat individuel</span>
+              <span>{t(lang, 'tx.single_purchase')}</span>
             </button>
 
             <button
@@ -436,7 +436,7 @@ export default component$(() => {
               }`}
             >
               <SvgIcon name="tag" size={14} class="text-amber-800" />
-              <span>Achat groupé (Panier)</span>
+              <span>{t(lang, 'tx.grouped_purchase')}</span>
             </button>
           </div>
         )}
@@ -452,16 +452,16 @@ export default component$(() => {
                 </div>
                 <div>
                   <span class="text-xs font-black text-amber-950 block">
-                    Panier d'achat groupé
+                    {t(lang, 'tx.cart_title')}
                   </span>
                   <span class="text-[11px] font-semibold text-slate-500">
-                    {state.groupItems.length} article(s) dans ce ticket
+                    {state.groupItems.length} {t(lang, 'tx.cart_items_count')}
                   </span>
                 </div>
               </div>
 
               <div class="flex items-center gap-1.5">
-                <span class="text-xs font-bold text-amber-900">Devise :</span>
+                <span class="text-xs font-bold text-amber-900">{t(lang, 'accounts.currency')} :</span>
                 <select
                   value={state.currencyCode}
                   onChange$={(e: any) => (state.currencyCode = e.target.value)}
@@ -479,13 +479,13 @@ export default component$(() => {
             {/* Group Title */}
             <div>
               <label class="block text-xs font-bold text-amber-900 mb-1">
-                Titre du ticket / Enseigne
+                {t(lang, 'tx.label')}
               </label>
               <input
                 type="text"
                 value={state.label}
                 onInput$={(e: any) => (state.label = e.target.value)}
-                placeholder="Ex: Score, Super U, Sortie Restaurant, Marché..."
+                placeholder={t(lang, 'tx.label_placeholder')}
                 class="w-full text-sm font-black text-slate-800 px-4 py-2.5 rounded-2xl border-2 border-amber-200 focus:border-amber-400 focus:outline-none bg-white"
               />
             </div>
@@ -493,9 +493,9 @@ export default component$(() => {
             {/* Items rows */}
             <div class="space-y-2 pt-1">
               <div class="grid grid-cols-12 gap-2 px-1 text-[10px] font-black uppercase text-amber-800/80">
-                <div class="col-span-6 sm:col-span-7">Désignation de l'article</div>
-                <div class="col-span-4 sm:col-span-3">Prix unitaire</div>
-                <div class="col-span-2 sm:col-span-2 text-center">Qté</div>
+                <div class="col-span-6 sm:col-span-7">{t(lang, 'tx.item_name')}</div>
+                <div class="col-span-4 sm:col-span-3">{t(lang, 'tx.unit_price')}</div>
+                <div class="col-span-2 sm:col-span-2 text-center">{t(lang, 'tx.qty')}</div>
               </div>
 
               {state.groupItems.map((item, idx) => (
@@ -546,7 +546,7 @@ export default component$(() => {
                         type="button"
                         onClick$={() => handleRemoveItem$(idx)}
                         class="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
-                        title="Supprimer cet élément"
+                        title={t(lang, 'common.delete')}
                       >
                         <SvgIcon name="trash" size={14} />
                       </button>
@@ -564,11 +564,11 @@ export default component$(() => {
                 class="px-4 py-2.5 rounded-xl border-2 border-dashed border-amber-400 hover:bg-amber-100 text-amber-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               >
                 <SvgIcon name="plus" size={14} />
-                <span>Ajouter un article</span>
+                <span>{t(lang, 'tx.add_item')}</span>
               </button>
 
               <div class="bg-amber-100/90 px-4 py-2 rounded-2xl flex items-center justify-between sm:justify-end gap-3 text-xs font-black text-amber-950">
-                <span class="text-amber-800 text-[11px]">Total du ticket :</span>
+                <span class="text-amber-800 text-[11px]">{t(lang, 'tx.receipt_total')}</span>
                 <span class="text-lg font-black text-amber-950">
                   {formatMoney(parseFloat(state.amount) || 0, state.currencyCode, lang === 'en' ? 'en-US' : 'fr-FR')}
                 </span>
@@ -584,7 +584,7 @@ export default component$(() => {
                   {t(lang, 'tx.amount')}
                 </label>
                 <span class="text-[11px] font-semibold text-slate-500">
-                  Devise de saisie
+                  {t(lang, 'tx.input_currency')}
                 </span>
               </div>
 
@@ -639,7 +639,7 @@ export default component$(() => {
                 type="text"
                 value={state.label}
                 onInput$={(e: any) => (state.label = e.target.value)}
-                placeholder="Ex: Courses au supermarché, Salaire, Déjeuner, Virement..."
+                placeholder={t(lang, 'tx.label_placeholder')}
                 class="w-full text-sm font-semibold text-slate-800 px-4 py-3 rounded-2xl border-2 border-amber-200 focus:border-amber-400 focus:outline-none bg-amber-50/20"
               />
             </div>
@@ -714,10 +714,10 @@ export default component$(() => {
                 </div>
                 <div>
                   <span class="text-xs font-black text-amber-950 block">
-                    Frais de transaction
+                    {t(lang, 'tx.fees')}
                   </span>
                   <span class="text-[11px] font-medium text-slate-500">
-                    Frais prélevés sur {currentAccount.name} ({currentAccount.currencyCode})
+                    {t(lang, 'tx.fees_deducted_from')} {currentAccount.name} ({currentAccount.currencyCode})
                   </span>
                 </div>
               </div>
@@ -728,7 +728,7 @@ export default component$(() => {
                   onClick$={() => (state.fee = '0')}
                   class="text-[11px] font-bold text-rose-600 hover:text-rose-800 transition-colors cursor-pointer"
                 >
-                  Annuler les frais
+                  {t(lang, 'tx.clear_fees')}
                 </button>
               )}
             </div>
@@ -753,7 +753,7 @@ export default component$(() => {
             {/* Quick shortcuts for MGA accounts */}
             {currentAccount.currencyCode === 'MGA' && (
               <div class="flex items-center gap-1.5 flex-wrap pt-0.5">
-                <span class="text-[10px] font-bold text-slate-500 mr-1">Raccourcis :</span>
+                <span class="text-[10px] font-bold text-slate-500 mr-1">{t(lang, 'tx.shortcuts')}</span>
                 {[0, 100, 200, 300, 500, 1000, 1500, 2000].map((preset) => (
                   <button
                     key={preset}
@@ -776,10 +776,10 @@ export default component$(() => {
               <div class="pt-2 border-t border-amber-200/60 text-xs font-bold text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                 <span class="text-amber-800 text-[11px]">
                   {state.type === 'expense'
-                    ? 'Total réel débité du compte :'
+                    ? t(lang, 'tx.total_debited')
                     : state.type === 'transfer'
-                    ? 'Total débité du compte émetteur :'
-                    : 'Montant net crédité :'}
+                    ? t(lang, 'tx.total_debited_source')
+                    : t(lang, 'tx.net_credited')}
                 </span>
                 <span class="font-black text-sm text-amber-950">
                   {formatMoney(
@@ -813,7 +813,7 @@ export default component$(() => {
             type="text"
             value={state.notes}
             onInput$={(e: any) => (state.notes = e.target.value)}
-            placeholder="Notes ou détails supplémentaires (facultatif)..."
+            placeholder={t(lang, 'tx.notes_placeholder')}
             class="w-full text-sm text-slate-800 px-4 py-2.5 rounded-2xl border-2 border-amber-200 focus:border-amber-400 focus:outline-none bg-white"
           />
         </div>
@@ -834,7 +834,7 @@ export default component$(() => {
             class="px-6 py-3 text-xs font-black rounded-2xl bg-amber-400 hover:bg-amber-500 text-amber-950 shadow-md active:scale-95 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
           >
             <SvgIcon name="check" size={16} />
-            <span>{isEditing ? 'Enregistrer les modifications' : t(lang, 'common.save')}</span>
+            <span>{t(lang, 'common.save')}</span>
           </button>
         </div>
       </div>

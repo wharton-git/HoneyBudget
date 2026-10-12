@@ -1,4 +1,5 @@
 import { component$, useStore, $, useVisibleTask$, type PropFunction } from '@builder.io/qwik';
+import { useI18n, t } from '../../i18n/context';
 import { SvgIcon } from '../icons/SvgIcon';
 
 interface ConcentricClockModalProps {
@@ -16,6 +17,8 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
   onClose$,
   onSelect$,
 }) => {
+  const { lang } = useI18n();
+
   const state = useStore({
     hour12: 12,
     minute: 0,
@@ -177,7 +180,7 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
               <SvgIcon name="clock" size={18} />
             </div>
             <h3 class="text-base font-black text-amber-950">
-              Heure
+              {t(lang, 'time.hour')}
             </h3>
           </div>
 
@@ -185,7 +188,7 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
             type="button"
             onClick$={onClose$}
             class="p-2 rounded-full hover:bg-amber-100 text-amber-800 transition-colors cursor-pointer"
-            title="Fermer"
+            title={t(lang, 'common.cancel')}
           >
             <SvgIcon name="x" size={18} />
           </button>
@@ -263,7 +266,7 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
                 : 'text-amber-800 hover:text-amber-950'
             }`}
           >
-            Par 5 min
+            {t(lang, 'time.step_5m')}
           </button>
           <button
             type="button"
@@ -274,7 +277,7 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
                 : 'text-amber-800 hover:text-amber-950'
             }`}
           >
-            Par 1 min
+            {t(lang, 'time.step_all')}
           </button>
         </div>
 
@@ -504,7 +507,7 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
             onClick$={handleSetNow$}
             class="px-4 py-2.5 text-xs font-black rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 transition-colors cursor-pointer"
           >
-            Maintenant
+            {t(lang, 'time.now')}
           </button>
 
           <div class="flex items-center gap-1.5">
@@ -550,7 +553,7 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
             onClick$={onClose$}
             class="px-5 py-2.5 text-xs font-bold rounded-2xl text-amber-800 hover:bg-amber-100 transition-colors cursor-pointer"
           >
-            Annuler
+            {t(lang, 'common.cancel')}
           </button>
 
           <button
@@ -559,7 +562,7 @@ export const ConcentricClockModal = component$<ConcentricClockModalProps>(({
             class="px-6 py-3 text-xs font-black rounded-2xl bg-amber-400 hover:bg-amber-500 text-amber-950 shadow-md active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
           >
             <SvgIcon name="check" size={16} />
-            <span>Valider</span>
+            <span>{t(lang, 'common.confirm')}</span>
           </button>
         </div>
       </div>

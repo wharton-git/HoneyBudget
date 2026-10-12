@@ -397,7 +397,7 @@ export default component$(() => {
               <span>{t(lang, 'reports.monthly_evolution')}</span>
             </h3>
             <p class="text-[11px] font-semibold text-slate-400">
-              {lang === 'fr' ? 'Comparatif Revenus vs Dépenses' : 'Income vs Expenses comparison'}
+              {t(lang, 'reports.income_vs_expense')}
             </p>
           </div>
 
@@ -526,7 +526,7 @@ export default component$(() => {
                 <span>{t(lang, 'reports.category_breakdown')}</span>
               </h3>
               <p class="text-[11px] font-semibold text-slate-400">
-                {state.categoryStats.length} {lang === 'fr' ? 'postes de dépenses' : 'expense categories'}
+                {state.categoryStats.length} {t(lang, 'reports.spending_categories')}
               </p>
             </div>
           </div>
@@ -647,7 +647,7 @@ export default component$(() => {
               <span>{t(lang, 'reports.daily_trend')}</span>
             </h3>
             <p class="text-[11px] font-semibold text-slate-400">
-              {lang === 'fr' ? 'Évolution jour par jour dans le mois' : 'Day by day spending curve'}
+              {t(lang, 'reports.daily_curve_subtitle')}
             </p>
           </div>
 
@@ -693,7 +693,7 @@ export default component$(() => {
                               fill={isPeak ? '#f43f5e' : d.amount > 0 ? '#f59e0b' : '#f1f5f9'}
                               class="group-hover:opacity-75 transition-opacity"
                             >
-                              <title>{`Jour ${d.day}: ${formatMoney(d.amount, state.baseCurrency, lang === 'en' ? 'en-US' : 'fr-FR')}`}</title>
+                              <title>{`${t(lang, 'reports.day')} ${d.day}: ${formatMoney(d.amount, state.baseCurrency, lang === 'en' ? 'en-US' : 'fr-FR')}`}</title>
                             </rect>
 
                             {/* Show day labels every 5 days or 1st/last */}
@@ -719,7 +719,7 @@ export default component$(() => {
 
               {/* Peak indicator */}
               <div class="mt-2 flex items-center justify-between text-xs font-semibold text-slate-500 pt-3 border-t border-amber-50">
-                <span>{lang === 'fr' ? 'Pic de dépense le plus élevé' : 'Highest spending peak'}</span>
+                <span>{t(lang, 'reports.highest_peak')}</span>
                 <span class="font-black text-rose-700">
                   {formatMoney(
                     Math.max(...state.dailySpending.map((d) => d.amount), 0),
@@ -741,7 +741,7 @@ export default component$(() => {
             <span>{t(lang, 'reports.accounts_flow')}</span>
           </h3>
           <p class="text-[11px] font-semibold text-slate-400">
-            {lang === 'fr' ? 'Volume des rentrées et sorties par moyen de paiement' : 'Inflows and outflows per payment method'}
+            {t(lang, 'reports.accounts_flow_subtitle')}
           </p>
         </div>
 

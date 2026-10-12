@@ -22,6 +22,8 @@ export interface Translations {
   'common.error': string;
   'common.offline': string;
   'common.close': string;
+  'common.color': string;
+  'common.icon': string;
 
   // Dashboard
   'dashboard.total_balance': string;
@@ -56,6 +58,8 @@ export interface Translations {
   'accounts.to_account': string;
   'accounts.delete_confirm': string;
   'accounts.convert_transactions_tip': string;
+  'accounts.all_accounts': string;
+  'accounts.name_placeholder': string;
 
   // Transactions
   'tx.title': string;
@@ -75,11 +79,70 @@ export interface Translations {
   'tx.search_placeholder': string;
   'tx.empty': string;
   'tx.converted_preview': string;
+  'tx.back_to_list': string;
+  'tx.single_purchase': string;
+  'tx.grouped_purchase': string;
+  'tx.cart_title': string;
+  'tx.cart_items_count': string;
+  'tx.item_name': string;
+  'tx.unit_price': string;
+  'tx.qty': string;
+  'tx.add_item': string;
+  'tx.receipt_total': string;
+  'tx.input_currency': string;
+  'tx.label_placeholder': string;
+  'tx.notes_placeholder': string;
+  'tx.fees': string;
+  'tx.fees_badge': string;
+  'tx.fees_deducted_from': string;
+  'tx.clear_fees': string;
+  'tx.shortcuts': string;
+  'tx.total_debited': string;
+  'tx.total_debited_source': string;
+  'tx.net_credited': string;
+  'tx.group_action': string;
+  'tx.group_selected': string;
+  'tx.group_prompt_title': string;
+  'tx.group_default_title': string;
+  'tx.group_same_account_alert': string;
+  'tx.ungroup_confirm': string;
+  'tx.delete_confirm': string;
+  'tx.multi_select_tip': string;
+  'tx.selected_count': string;
+  'tx.articles': string;
+  'tx.articles_short': string;
+  'tx.cart_details': string;
+  'tx.ungroup_action': string;
+  'tx.error_amount': string;
+  'tx.error_label': string;
+  'tx.error_account': string;
+  'tx.error_same_account': string;
+  'tx.error_account_not_found': string;
+  'tx.error_generic': string;
+
+  // Time & Date picker
+  'time.operation_time': string;
+  'time.select_time': string;
+  'time.no_time': string;
+  'time.now': string;
+  'time.noon': string;
+  'time.evening': string;
+  'time.clear_time': string;
+  'time.today': string;
+  'time.yesterday': string;
+  'time.hour': string;
+  'time.minutes': string;
+  'time.step_5m': string;
+  'time.step_all': string;
+  'time.prev_month': string;
+  'time.next_month': string;
+  'time.set': string;
 
   // Categories & Budgets
   'cat.title': string;
   'cat.new_category': string;
   'cat.budget_limit': string;
+  'cat.no_limit': string;
   'cat.spent_this_month': string;
   'cat.remaining': string;
   'cat.over_budget': string;
@@ -143,6 +206,33 @@ export interface Translations {
   'settings.about_desc': string;
   'settings.convert_budgets': string;
   'settings.budgets_converted_success': string;
+  'settings.reset_title': string;
+  'settings.reset_button': string;
+  'settings.reset_confirm': string;
+  'settings.reset_success': string;
+  'settings.rates_refresh_success': string;
+  'settings.rates_offline_warning': string;
+  'settings.rates_fetch_error': string;
+  'settings.login_success': string;
+  'settings.login_error': string;
+  'settings.signup_init': string;
+  'settings.signup_success': string;
+  'settings.signup_error': string;
+  'settings.signout_success': string;
+  'settings.signout_error': string;
+  'settings.sync_push_success': string;
+  'settings.sync_push_error': string;
+  'settings.sync_pull_success': string;
+  'settings.sync_pull_error': string;
+  'settings.auth_credentials_required': string;
+  'settings.signed_in_as': string;
+  'settings.rls_active': string;
+  'settings.local_backup_json': string;
+  'settings.about_footer': string;
+  'settings.encrypted_backup': string;
+  'settings.decrypt_prompt': string;
+  'settings.decrypt_placeholder': string;
+  'settings.restore_button': string;
 
   // Reports
   'reports.title': string;
@@ -158,9 +248,16 @@ export interface Translations {
   'reports.monthly_evolution': string;
   'reports.category_breakdown': string;
   'reports.daily_trend': string;
+  'reports.daily_curve_subtitle': string;
   'reports.accounts_flow': string;
+  'reports.accounts_flow_subtitle': string;
+  'reports.day': string;
   'reports.no_data': string;
   'reports.mascot_tip_positive': string;
   'reports.mascot_tip_deficit': string;
+  'reports.income_vs_expense': string;
+  'reports.spending_categories': string;
+  'reports.highest_peak': string;
+  'reports.positive_balance': string;
+  'reports.budget_warning': string;
 }
-

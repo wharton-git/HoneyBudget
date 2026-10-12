@@ -67,7 +67,8 @@ export default component$(() => {
 
   const handleUngroup$ = $(async (tx: Transaction) => {
     if (!tx.items || tx.items.length === 0) return;
-    if (confirm(`Dégrouper "${tx.label}" en ${tx.items.length} opérations individuelles ?`)) {
+    const confirmMsg = `${t(lang, 'tx.ungroup_confirm')} (${tx.label} - ${tx.items.length} ${t(lang, 'tx.articles')})`;
+    if (confirm(confirmMsg)) {
       await db.transactions.delete(tx.id!);
 
       for (const item of tx.items) {
@@ -95,11 +96,11 @@ export default component$(() => {
     const firstAcc = toGroup[0].accountId;
     const sameAcc = toGroup.every((t) => t.accountId === firstAcc);
     if (!sameAcc) {
-      alert('Veuillez sélectionner des opérations du même compte pour les grouper.');
+      alert(t(lang, 'tx.group_same_account_alert'));
       return;
     }
 
-    const title = prompt('Titre du groupe d\'achats (ex: Score, Super U, Sortie restaurant) :', 'Achat groupé');
+    const title = prompt(t(lang, 'tx.group_prompt_title'), t(lang, 'tx.group_default_title'));
     if (!title || !title.trim()) return;
 
     const totalAmount = toGroup.reduce((sum, t) => sum + t.amount, 0);
@@ -133,7 +134,7 @@ export default component$(() => {
   });
 
   const handleDelete$ = $(async (tx: Transaction) => {
-    if (confirm('Voulez-vous supprimer cette opération ?')) {
+    if (confirm(t(lang, 'tx.delete_confirm'))) {
       await db.transactions.delete(tx.id!);
       // Revert account balance (including fee for non-cash accounts)
       const acc = await db.accounts.get(tx.accountId);
@@ -198,10 +199,10 @@ export default component$(() => {
                 ? 'bg-amber-300 text-amber-950 border border-amber-400 shadow-xs'
                 : 'bg-white hover:bg-amber-100 text-amber-900 border border-amber-200'
             }`}
-            title="Activer la sélection multiple pour grouper des opérations"
+            title={t(lang, 'tx.multi_select_tip')}
           >
             <SvgIcon name="tag" size={13} />
-            <span>{state.isMultiSelectMode ? 'Annuler' : 'Grouper'}</span>
+            <span>{state.isMultiSelectMode ? t(lang, 'common.cancel') : t(lang, 'tx.group_action')}</span>
           </button>
 
           <a
@@ -221,7 +222,7 @@ export default component$(() => {
             <div class="w-6 h-6 rounded-lg bg-amber-200 flex items-center justify-center text-amber-900">
               <SvgIcon name="check" size={13} />
             </div>
-            <span>{state.selectedTxIds.length} opération(s) sélectionnée(s)</span>
+            <span>{state.selectedTxIds.length} {t(lang, 'tx.selected_count')}</span>
           </div>
 
           <div class="flex items-center gap-2">
@@ -236,7 +237,7 @@ export default component$(() => {
               }`}
             >
               <SvgIcon name="tag" size={13} />
-              <span>Grouper en 1 ticket</span>
+              <span>{t(lang, 'tx.group_selected')}</span>
             </button>
           </div>
         </div>
@@ -286,7 +287,7 @@ export default component$(() => {
             onChange$={(e: any) => (state.selectedAccountId = parseInt(e.target.value, 10))}
             class="text-xs font-bold text-slate-700 bg-white border-2 border-amber-200 rounded-2xl px-3 py-1.5 focus:outline-none"
           >
-            <option value={0}>Tous les comptes</option>
+            <option value={0}>{t(lang, 'accounts.all_accounts')}</option>
             {state.accounts.map((acc) => (
               <option key={acc.id} value={acc.id}>
                 {`${acc.name} (${acc.currencyCode})`}
@@ -347,10 +348,10 @@ export default component$(() => {
                             type="button"
                             onClick$={() => handleToggleExpand$(tx.id!)}
                             class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-950 text-[10px] font-black transition-colors cursor-pointer"
-                            title="Afficher/masquer les détails du panier"
+                            title={t(lang, 'tx.cart_details')}
                           >
                             <SvgIcon name="tag" size={11} class="text-amber-700" />
-                            <span>{tx.items.length} articles</span>
+                            <span>{tx.items.length} {t(lang, 'tx.articles')}</span>
                             <SvgIcon
                               name={isGroupExpanded ? 'chevron-up' : 'chevron-down'}
                               size={11}
@@ -373,7 +374,7 @@ export default component$(() => {
                           <>
                             <span>•</span>
                             <span class="text-amber-900 font-bold bg-amber-100/90 px-1.5 py-0.2 rounded-md text-[10px]">
-                              frais: {formatMoney(tx.fee, acc?.currencyCode || 'EUR', lang === 'en' ? 'en-US' : 'fr-FR')}
+                              {t(lang, 'tx.fees_badge')} : {formatMoney(tx.fee, acc?.currencyCode || 'EUR', lang === 'en' ? 'en-US' : 'fr-FR')}
                             </span>
                           </>
                         )}
@@ -403,7 +404,7 @@ export default component$(() => {
                       </div>
                       {tx.fee && tx.fee > 0 && (
                         <div class="text-[10px] font-bold text-amber-800 bg-amber-100/80 px-1.5 py-0.5 rounded-md inline-block mt-0.5">
-                          + frais : {formatMoney(tx.fee, acc?.currencyCode || 'EUR', lang === 'en' ? 'en-US' : 'fr-FR')}
+                          + {t(lang, 'tx.fees_badge')} : {formatMoney(tx.fee, acc?.currencyCode || 'EUR', lang === 'en' ? 'en-US' : 'fr-FR')}
                         </div>
                       )}
                       {acc && acc.currencyCode !== state.baseCurrency && (
@@ -444,15 +445,15 @@ export default component$(() => {
                     <div class="flex items-center justify-between text-xs font-black text-amber-950">
                       <div class="flex items-center gap-1.5">
                         <SvgIcon name="tag" size={13} class="text-amber-700" />
-                        <span>Détail du panier ({tx.items.length} articles)</span>
+                        <span>{t(lang, 'tx.cart_details')} ({tx.items.length} {t(lang, 'tx.articles')})</span>
                       </div>
                       <button
                         type="button"
                         onClick$={() => handleUngroup$(tx)}
                         class="text-[11px] font-bold text-amber-800 hover:text-amber-950 underline decoration-amber-300 underline-offset-2 transition-colors cursor-pointer"
-                        title="Dégrouper cette opération en plusieurs achats individuels"
+                        title={t(lang, 'tx.ungroup_action')}
                       >
-                        Dégrouper en achats individuels
+                        {t(lang, 'tx.ungroup_action')}
                       </button>
                     </div>
 

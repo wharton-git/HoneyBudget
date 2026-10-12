@@ -328,7 +328,7 @@ export default component$(() => {
                         </span>
                         {tx.isGroup && tx.items && tx.items.length > 0 && (
                           <span class="px-1.5 py-0.2 rounded-md bg-amber-100 text-amber-900 text-[10px] font-black">
-                            {tx.items.length} art.
+                            {tx.items.length} {t(lang, 'tx.articles_short')}
                           </span>
                         )}
                       </div>
@@ -345,7 +345,7 @@ export default component$(() => {
                           <>
                             <span>•</span>
                             <span class="text-amber-900 font-bold bg-amber-100/90 px-1.5 py-0.2 rounded-md text-[10px]">
-                              frais: {formatMoney(tx.fee, acc?.currencyCode || 'EUR', lang === 'en' ? 'en-US' : 'fr-FR')}
+                              {t(lang, 'tx.fees_badge')} : {formatMoney(tx.fee, acc?.currencyCode || 'EUR', lang === 'en' ? 'en-US' : 'fr-FR')}
                             </span>
                           </>
                         )}
@@ -368,7 +368,7 @@ export default component$(() => {
                     </div>
                     {tx.fee && tx.fee > 0 && (
                       <div class="text-[10px] font-bold text-amber-800 bg-amber-100/80 px-1.5 py-0.2 rounded-md inline-block mt-0.5">
-                        + frais : {formatMoney(tx.fee, acc?.currencyCode || 'EUR', lang === 'en' ? 'en-US' : 'fr-FR')}
+                        + {t(lang, 'tx.fees_badge')} : {formatMoney(tx.fee, acc?.currencyCode || 'EUR', lang === 'en' ? 'en-US' : 'fr-FR')}
                       </div>
                     )}
                     {acc && acc.currencyCode !== state.baseCurrency && (

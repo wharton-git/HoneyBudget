@@ -162,7 +162,7 @@ export const AccountModal = component$<AccountModalProps>(({ isOpen, onClose$, o
               type="text"
               value={state.name}
               onInput$={(e: any) => (state.name = e.target.value)}
-              placeholder="Ex: Compte Courant, Épargne Vacances..."
+              placeholder={t(lang, 'accounts.name_placeholder')}
               class="w-full text-sm font-semibold text-slate-800 px-4 py-2.5 rounded-2xl border-2 border-amber-200 focus:border-amber-400 focus:outline-none bg-amber-50/20"
             />
           </div>
@@ -255,7 +255,7 @@ export const AccountModal = component$<AccountModalProps>(({ isOpen, onClose$, o
           {/* Color Picker */}
           <div>
             <label class="block text-xs font-bold text-amber-900 mb-1">
-              Couleur douce
+              {t(lang, 'common.color')}
             </label>
             <div class="flex items-center gap-2">
               {PASTEL_COLORS.map((c) => (
@@ -275,7 +275,7 @@ export const AccountModal = component$<AccountModalProps>(({ isOpen, onClose$, o
           {/* SVG Icon Picker */}
           <div>
             <label class="block text-xs font-bold text-amber-900 mb-1">
-              Icône SVG
+              {t(lang, 'common.icon')}
             </label>
             <div class="flex items-center gap-2">
               {ACCOUNT_ICONS.map((ic) => (

@@ -11,6 +11,9 @@ importers:
       dexie:
         specifier: ^4.0.11
         version: 4.4.6
+      undici:
+        specifier: ^8.11.2
+        version: 8.11.2
     devDependencies:
       '@builder.io/qwik':
         specifier: ^1.20.2
@@ -51,9 +54,6 @@ importers:
       typescript-plugin-css-modules:
         specifier: latest
         version: 5.2.0(supports-color@7.2.0)(typescript@5.4.5)
-      undici:
-        specifier: '*'
-        version: 8.11.2
       vite:
         specifier: 7.3.1
         version: 7.3.1(@types/node@20.19.0)(jiti@2.7.0)(less@4.9.1(supports-color@7.2.0))(lightningcss@1.32.0)(sass@1.105.1)(stylus@0.62.0(supports-color@7.2.0))(terser@5.51.2)

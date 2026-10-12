@@ -11,21 +11,24 @@
     "build": "qwik build",
     "build.client": "vite build",
     "build.preview": "vite build --ssr src/entry.preview.tsx",
-    "build.server": "vite build -c adapters/cloudflare-pages/vite.config.ts",
+    "build.server": "vite build -c adapters/node-server/vite.config.ts",
     "build.types": "tsc --incremental --noEmit",
-    "deploy": "wrangler pages deploy ./dist",
     "dev": "vite --mode ssr",
     "dev.debug": "node --inspect-brk ./node_modules/vite/bin/vite.js --mode ssr --force",
     "fmt": "prettier --write .",
     "fmt.check": "prettier --check .",
     "lint": "eslint \"src/**/*.ts*\"",
     "preview": "qwik build preview && vite preview --open",
-    "serve": "wrangler pages dev ./dist --compatibility-flags=nodejs_als",
+    "serve": "node server/entry.node-server.js",
     "start": "vite --open --mode ssr",
+    "docker:build": "docker build -t honeybudget:latest .",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
     "qwik": "qwik"
   },
   "dependencies": {
-    "dexie": "^4.0.11"
+    "dexie": "^4.0.11",
+    "undici": "^8.11.2"
   },
   "devDependencies": {
     "@builder.io/qwik": "^1.20.2",
@@ -41,7 +44,6 @@
     "typescript": "5.4.5",
     "typescript-eslint": "8.38.0",
     "typescript-plugin-css-modules": "latest",
-    "undici": "*",
     "vite": "7.3.1",
     "vite-plugin-pwa": "^2.0.0",
     "vite-tsconfig-paths": "^4.2.1"

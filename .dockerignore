@@ -1,0 +1,13 @@
+node_modules
+dist
+server
+.git
+.github
+.gemini
+*.log
+.DS_Store
+.env*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

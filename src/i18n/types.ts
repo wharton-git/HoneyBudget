@@ -52,6 +52,11 @@ export interface Translations {
   'accounts.type.checking': string;
   'accounts.type.savings': string;
   'accounts.type.cash': string;
+  'accounts.type.bank': string;
+  'accounts.type.mobile_money': string;
+  'accounts.type.crypto': string;
+  'accounts.types_label': string;
+  'accounts.types_hint': string;
   'accounts.transfer': string;
   'accounts.transfer_title': string;
   'accounts.from_account': string;

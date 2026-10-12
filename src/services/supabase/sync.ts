@@ -1,5 +1,5 @@
 import { getSupabase } from './client';
-import { db, type Account, type Category, type Transaction, type AppSettingsRecord } from '../../db';
+import { db, type Account, type AccountType, type Category, type Transaction, type AppSettingsRecord, getAccountTypes } from '../../db';
 
 export interface SyncResult {
   success: boolean;
@@ -25,6 +25,7 @@ export const pushLocalToSupabase = async (userId: string): Promise<{ accounts: n
       client_id: acc.id!,
       name: acc.name,
       type: acc.type,
+      types: getAccountTypes(acc),
       currency_code: acc.currencyCode,
       balance: acc.balance,
       color: acc.color,
@@ -136,6 +137,7 @@ export const pullRemoteFromSupabase = async (userId: string): Promise<{ accounts
     id: Number(row.client_id),
     name: row.name,
     type: row.type as any,
+    types: Array.isArray(row.types) && row.types.length > 0 ? (row.types as AccountType[]) : [row.type as AccountType],
     currencyCode: row.currency_code,
     balance: Number(row.balance),
     color: row.color,

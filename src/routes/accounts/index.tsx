@@ -3,8 +3,27 @@ import type { DocumentHead } from '@builder.io/qwik-city';
 import { useI18n, t, translate } from '../../i18n/context';
 import { SvgIcon } from '../../components/icons/SvgIcon';
 import { AccountModal } from '../../components/accounts/AccountModal';
-import { db, type Account } from '../../db';
+import { db, type Account, type AccountType, getAccountTypes } from '../../db';
 import { formatMoney, convertCurrency } from '../../services/currency/ratesService';
+
+const getAccountTypeLabel = (accountType: AccountType, lang: any) => {
+  switch (accountType) {
+    case 'checking':
+      return t(lang, 'accounts.type.checking');
+    case 'savings':
+      return t(lang, 'accounts.type.savings');
+    case 'cash':
+      return t(lang, 'accounts.type.cash');
+    case 'bank':
+      return t(lang, 'accounts.type.bank');
+    case 'mobile_money':
+      return t(lang, 'accounts.type.mobile_money');
+    case 'crypto':
+      return t(lang, 'accounts.type.crypto');
+    default:
+      return accountType;
+  }
+};
 
 export default component$(() => {
   const { lang } = useI18n();
@@ -93,14 +112,15 @@ export default component$(() => {
                   </div>
                   <div>
                     <h3 class="text-base font-black text-amber-950">{acc.name}</h3>
-                    <div class="flex items-center gap-1.5 mt-0.5">
-                      <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
-                        {acc.type === 'checking'
-                          ? t(lang, 'accounts.type.checking')
-                          : acc.type === 'savings'
-                          ? t(lang, 'accounts.type.savings')
-                          : t(lang, 'accounts.type.cash')}
-                      </span>
+                    <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                      {getAccountTypes(acc).map((typeKey) => (
+                        <span
+                          key={typeKey}
+                          class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200"
+                        >
+                          {getAccountTypeLabel(typeKey, lang)}
+                        </span>
+                      ))}
                       <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
                         {acc.currencyCode}
                       </span>

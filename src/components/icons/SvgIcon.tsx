@@ -6,6 +6,9 @@ export type IconName =
   | 'piggy'
   | 'vault'
   | 'coin'
+  | 'smartphone'
+  | 'bank'
+  | 'crypto'
   | 'swap'
   | 'apple'
   | 'home'
@@ -102,6 +105,26 @@ export const SvgIcon = component$<SvgIconProps>(({ name, size = 20, class: class
             <circle cx="12" cy="12" r="5" stroke-dasharray="2 2" />
             <path d="M12 9.5v5" />
             <path d="M10.5 11h3" />
+          </>
+        );
+      case 'smartphone':
+        return (
+          <>
+            <rect x="5" y="2" width="14" height="20" rx="2" />
+            <line x1="12" y1="18" x2="12.01" y2="18" />
+          </>
+        );
+      case 'bank':
+        return (
+          <>
+            <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v4M12 14v4M16 14v4" />
+          </>
+        );
+      case 'crypto':
+        return (
+          <>
+            <circle cx="12" cy="12" r="9" />
+            <path d="M9 8h4.5a2.5 2.5 0 0 1 0 5H9m0 0h5a2.5 2.5 0 0 1 0 5H9m0-10v10m2-12v2m0 10v2m4-14v2m0 10v2" />
           </>
         );
       case 'swap':

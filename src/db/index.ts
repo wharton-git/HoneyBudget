@@ -1,15 +1,46 @@
 import Dexie, { type Table } from 'dexie';
 
-export interface Account {
+export type AccountType =
+  | 'checking'
+  | 'savings'
+  | 'cash'
+  | 'bank'
+  | 'mobile_money'
+  | 'crypto';
 
+export interface Account {
   id?: number;
   name: string;
-  type: 'checking' | 'savings' | 'cash';
+  type: AccountType;
+  types?: AccountType[];
   currencyCode: string;
   balance: number; // in floating decimal or base unit (e.g. 1500.50)
   color: string;
   iconSvg: string;
 }
+
+/**
+ * Returns all types associated with an account.
+ * Defaults to [account.type] if types array is missing or empty.
+ */
+export const getAccountTypes = (account?: Account | null): AccountType[] => {
+  if (!account) return ['checking'];
+  if (Array.isArray(account.types) && account.types.length > 0) {
+    return account.types;
+  }
+  return account.type ? [account.type] : ['checking'];
+};
+
+/**
+ * Returns true if the account is strictly cash-only (i.e. every type is 'cash').
+ * If an account has multiple types, such as 'cash' AND 'mobile_money', it is NOT cash-only,
+ * so transaction fees are permitted.
+ */
+export const isCashOnlyAccount = (account?: Account | null): boolean => {
+  if (!account) return false;
+  const types = getAccountTypes(account);
+  return types.length > 0 && types.every((t) => t === 'cash');
+};
 
 export interface Category {
   id?: number;

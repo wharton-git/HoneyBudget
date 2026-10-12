@@ -1,7 +1,8 @@
 import { component$, useStore, $, useVisibleTask$, type PropFunction } from '@builder.io/qwik';
 import { useI18n, t } from '../../i18n/context';
-import { SvgIcon } from '../icons/SvgIcon';
-import { db, type Account } from '../../db';
+import type { Translations } from '../../i18n/types';
+import { SvgIcon, type IconName } from '../icons/SvgIcon';
+import { db, type Account, type AccountType, getAccountTypes } from '../../db';
 import { SUPPORTED_CURRENCIES, convertCurrency, getCurrencyDecimals } from '../../services/currency/ratesService';
 
 interface AccountModalProps {
@@ -21,14 +22,38 @@ const PASTEL_COLORS = [
   '#06B6D4', // Turquoise
 ];
 
-const ACCOUNT_ICONS = ['wallet', 'honey-pot', 'piggy', 'vault', 'coin'];
+const ACCOUNT_ICONS: IconName[] = [
+  'wallet',
+  'smartphone',
+  'bank',
+  'crypto',
+  'coin',
+  'vault',
+  'piggy',
+  'honey-pot',
+];
+
+interface AccountTypeOption {
+  type: AccountType;
+  labelKey: keyof Translations;
+  icon: IconName;
+}
+
+const ACCOUNT_TYPE_OPTIONS: AccountTypeOption[] = [
+  { type: 'mobile_money', labelKey: 'accounts.type.mobile_money', icon: 'smartphone' },
+  { type: 'bank', labelKey: 'accounts.type.bank', icon: 'bank' },
+  { type: 'crypto', labelKey: 'accounts.type.crypto', icon: 'crypto' },
+  { type: 'checking', labelKey: 'accounts.type.checking', icon: 'coin' },
+  { type: 'savings', labelKey: 'accounts.type.savings', icon: 'piggy' },
+  { type: 'cash', labelKey: 'accounts.type.cash', icon: 'wallet' },
+];
 
 export const AccountModal = component$<AccountModalProps>(({ isOpen, onClose$, onSaved$, editAccount }) => {
   const { lang } = useI18n();
 
   const state = useStore({
     name: '',
-    type: 'checking' as 'checking' | 'savings' | 'cash',
+    types: ['checking'] as AccountType[],
     currencyCode: 'EUR',
     balance: '',
     color: '#F59E0B',
@@ -47,18 +72,29 @@ export const AccountModal = component$<AccountModalProps>(({ isOpen, onClose$, o
 
     if (editAccount) {
       state.name = editAccount.name;
-      state.type = editAccount.type;
+      state.types = getAccountTypes(editAccount);
       state.currencyCode = editAccount.currencyCode;
       state.balance = String(editAccount.balance);
       state.color = editAccount.color || '#F59E0B';
       state.iconSvg = editAccount.iconSvg || 'wallet';
     } else {
       state.name = '';
-      state.type = 'checking';
+      state.types = ['checking'];
       state.currencyCode = settings?.baseCurrency || 'EUR';
       state.balance = '0';
       state.color = '#F59E0B';
       state.iconSvg = 'wallet';
+    }
+  });
+
+  const handleToggleType$ = $((tType: AccountType) => {
+    const exists = state.types.includes(tType);
+    if (exists) {
+      if (state.types.length > 1) {
+        state.types = state.types.filter((t) => t !== tType);
+      }
+    } else {
+      state.types = [...state.types, tType];
     }
   });
 
@@ -80,6 +116,8 @@ export const AccountModal = component$<AccountModalProps>(({ isOpen, onClose$, o
 
     state.loading = true;
 
+    const primaryType = state.types.length > 0 ? state.types[0] : 'checking';
+
     try {
       if (editAccount) {
         // If currency changed, convert all transactions belonging to this account
@@ -97,7 +135,8 @@ export const AccountModal = component$<AccountModalProps>(({ isOpen, onClose$, o
 
         await db.accounts.update(editAccount.id!, {
           name: state.name.trim(),
-          type: state.type,
+          type: primaryType,
+          types: state.types,
           currencyCode: state.currencyCode,
           balance: val,
           color: state.color,
@@ -106,7 +145,8 @@ export const AccountModal = component$<AccountModalProps>(({ isOpen, onClose$, o
       } else {
         await db.accounts.add({
           name: state.name.trim(),
-          type: state.type,
+          type: primaryType,
+          types: state.types,
           currencyCode: state.currencyCode,
           balance: val,
           color: state.color,
@@ -167,45 +207,50 @@ export const AccountModal = component$<AccountModalProps>(({ isOpen, onClose$, o
             />
           </div>
 
-          {/* Type */}
+          {/* Types (Multi-selection) */}
           <div>
-            <label class="block text-xs font-bold text-amber-900 mb-1">
-              {t(lang, 'accounts.type')}
-            </label>
-            <div class="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick$={() => (state.type = 'checking')}
-                class={`py-2 text-xs font-bold rounded-xl border-2 transition-all ${
-                  state.type === 'checking'
-                    ? 'border-amber-400 bg-amber-100/70 text-amber-950'
-                    : 'border-amber-100 bg-white text-slate-600'
-                }`}
-              >
-                {t(lang, 'accounts.type.checking')}
-              </button>
-              <button
-                type="button"
-                onClick$={() => (state.type = 'savings')}
-                class={`py-2 text-xs font-bold rounded-xl border-2 transition-all ${
-                  state.type === 'savings'
-                    ? 'border-amber-400 bg-amber-100/70 text-amber-950'
-                    : 'border-amber-100 bg-white text-slate-600'
-                }`}
-              >
-                {t(lang, 'accounts.type.savings')}
-              </button>
-              <button
-                type="button"
-                onClick$={() => (state.type = 'cash')}
-                class={`py-2 text-xs font-bold rounded-xl border-2 transition-all ${
-                  state.type === 'cash'
-                    ? 'border-amber-400 bg-amber-100/70 text-amber-950'
-                    : 'border-amber-100 bg-white text-slate-600'
-                }`}
-              >
-                {t(lang, 'accounts.type.cash')}
-              </button>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="block text-xs font-bold text-amber-900">
+                {t(lang, 'accounts.types_label')}
+              </label>
+              <span class="text-[11px] font-medium text-amber-700/80">
+                {t(lang, 'accounts.types_hint')}
+              </span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              {ACCOUNT_TYPE_OPTIONS.map((opt) => {
+                const isSelected = state.types.includes(opt.type);
+                return (
+                  <button
+                    type="button"
+                    key={opt.type}
+                    onClick$={() => handleToggleType$(opt.type)}
+                    class={`relative flex items-center gap-2 p-2.5 rounded-2xl border-2 text-left transition-all cursor-pointer ${
+                      isSelected
+                        ? 'border-amber-400 bg-amber-100/70 text-amber-950 font-black shadow-xs'
+                        : 'border-amber-100 bg-white text-slate-600 hover:border-amber-200 hover:bg-amber-50/30'
+                    }`}
+                  >
+                    <div
+                      class={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
+                        isSelected ? 'bg-amber-400 text-amber-950' : 'bg-amber-50 text-amber-700'
+                      }`}
+                    >
+                      <SvgIcon name={opt.icon} size={14} />
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-xs font-bold truncate leading-tight">
+                        {t(lang, opt.labelKey)}
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <div class="w-4 h-4 rounded-full bg-amber-400 text-amber-950 flex items-center justify-center shrink-0">
+                        <SvgIcon name="check" size={10} strokeWidth={3} />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

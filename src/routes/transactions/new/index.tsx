@@ -3,7 +3,7 @@ import { useLocation, useNavigate, type DocumentHead } from '@builder.io/qwik-ci
 import { useI18n, t } from '../../../i18n/context';
 import { SvgIcon } from '../../../components/icons/SvgIcon';
 import { HoneyDateTimePicker } from '../../../components/common/HoneyDateTimePicker';
-import { db, type Account, type Category, type Transaction } from '../../../db';
+import { db, type Account, type Category, type Transaction, isCashOnlyAccount } from '../../../db';
 import {
   SUPPORTED_CURRENCIES,
   convertCurrency,
@@ -71,7 +71,7 @@ export default component$(() => {
     if (newAcc && oldAcc && state.currencyCode === oldAcc.currencyCode) {
       state.currencyCode = newAcc.currencyCode;
     }
-    if (newAcc?.type === 'cash') {
+    if (isCashOnlyAccount(newAcc)) {
       state.fee = '0';
     }
   });
@@ -233,7 +233,7 @@ export default component$(() => {
         }
       }
 
-      const fee = selectedAccount.type !== 'cash' && !isNaN(parseFloat(state.fee)) ? Math.max(0, parseFloat(state.fee)) : 0;
+      const fee = selectedAccount && !isCashOnlyAccount(selectedAccount) && !isNaN(parseFloat(state.fee)) ? Math.max(0, parseFloat(state.fee)) : 0;
 
       const groupItemsToSave = state.isGroup
         ? state.groupItems
@@ -705,7 +705,7 @@ export default component$(() => {
         </div>
 
         {/* 4.5 Frais de transaction (pour les comptes autres que le cash) */}
-        {currentAccount && currentAccount.type !== 'cash' && (
+        {currentAccount && !isCashOnlyAccount(currentAccount) && (
           <div class="p-4 bg-amber-50/70 rounded-2xl border-2 border-amber-200/90 space-y-3">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">

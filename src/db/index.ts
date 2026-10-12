@@ -81,7 +81,7 @@ export class HoneyBudgetDatabase extends Dexie {
 export const db = new HoneyBudgetDatabase();
 
 /**
- * Initialize database with real data from data.csv (replaces test data)
+ * Initialize database with clean default starter data (no personal user data in seed)
  */
 export const initDatabase = async (forceReset: boolean = false) => {
   if (typeof window === 'undefined') return;
@@ -89,24 +89,22 @@ export const initDatabase = async (forceReset: boolean = false) => {
   const currentSettings = await db.settings.get('current');
   const count = await db.accounts.count();
 
-  // If first run or if legacy test data detected (seedVersion !== 6)
-  if (forceReset || count === 0 || !currentSettings || currentSettings.seedVersion !== 6) {
+  // If first run or if legacy test data detected (seedVersion !== 7)
+  if (forceReset || count === 0 || !currentSettings || currentSettings.seedVersion !== 7) {
     const {
-      REAL_SETTINGS,
-      REAL_ACCOUNTS,
-      REAL_CATEGORIES,
-      REAL_TRANSACTIONS,
-    } = await import('./seedRealData');
+      STARTER_SETTINGS,
+      STARTER_ACCOUNTS,
+      STARTER_CATEGORIES,
+    } = await import('./starterData');
 
     await db.transactions.clear();
     await db.accounts.clear();
     await db.categories.clear();
     await db.settings.clear();
 
-    await db.settings.put(REAL_SETTINGS);
-    await db.categories.bulkAdd(REAL_CATEGORIES);
-    await db.accounts.bulkAdd(REAL_ACCOUNTS);
-    await db.transactions.bulkAdd(REAL_TRANSACTIONS);
+    await db.settings.put(STARTER_SETTINGS);
+    await db.categories.bulkAdd(STARTER_CATEGORIES);
+    await db.accounts.bulkAdd(STARTER_ACCOUNTS);
   }
 };
 

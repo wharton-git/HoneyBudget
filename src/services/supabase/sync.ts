@@ -187,7 +187,7 @@ export const pullRemoteFromSupabase = async (userId: string): Promise<{ accounts
         theme: remoteSettings.theme,
         rates: remoteSettings.rates || current?.rates || {},
         lastRatesUpdate: remoteSettings.last_rates_update || current?.lastRatesUpdate,
-        seedVersion: 6,
+        seedVersion: 7,
       };
       await db.settings.put(updated);
     }

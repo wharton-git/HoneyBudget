@@ -29,9 +29,24 @@ export default component$(() => {
     // Initialize Dexie DB
     await initDatabase();
 
+    // Check Supabase authenticated user and auto-pull if local transactions are empty
+    try {
+      const { getCurrentUser } = await import('../services/supabase/auth');
+      const user = await getCurrentUser();
+      if (user) {
+        const txCount = await db.transactions.count();
+        if (txCount === 0) {
+          const { pullRemoteFromSupabase } = await import('../services/supabase/sync');
+          await pullRemoteFromSupabase(user.id);
+        }
+      }
+    } catch (e) {
+      console.warn('Supabase auto-sync check:', e);
+    }
+
     const currentSettings = await db.settings.get('current');
     if (currentSettings) {
-      state.baseCurrency = currentSettings.baseCurrency || 'EUR';
+      state.baseCurrency = currentSettings.baseCurrency || 'MGA';
       if (!savedLang && currentSettings.language) {
         i18nStore.lang = currentSettings.language;
       }

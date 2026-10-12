@@ -149,15 +149,14 @@ export default component$(() => {
     }
   });
 
-  const handleReloadRealData$ = $(async () => {
-
-    if (confirm('Voulez-vous réinitialiser HoneyBudget avec les 474 opérations réelles de data.csv ?')) {
+  const handleResetAppData$ = $(async () => {
+    if (confirm('Voulez-vous réinitialiser les données locales de l\'application (remise à zéro des comptes et opérations locaux) ?')) {
       await initDatabase(true);
       await loadSettings$();
       if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('honey_currency_changed', { detail: { baseCurrency: 'MGA' } }));
+        window.dispatchEvent(new CustomEvent('honey_currency_changed', { detail: { baseCurrency: state.baseCurrency } }));
       }
-      state.statusMessage = 'Données réelles (data.csv) chargées avec succès ! (474 opérations)';
+      state.statusMessage = 'Application réinitialisée avec les modèles par défaut.';
       state.statusType = 'success';
     }
   });
@@ -697,16 +696,16 @@ export default component$(() => {
           </label>
         </div>
 
-        {/* Reload data.csv */}
+        {/* Reset App */}
         <div class="pt-3 border-t border-amber-100 flex items-center justify-between">
           <span class="text-xs font-bold text-slate-600">Réinitialisation</span>
           <button
             type="button"
-            onClick$={handleReloadRealData$}
-            class="px-3.5 py-2 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold text-xs transition-colors cursor-pointer flex items-center gap-1.5"
+            onClick$={handleResetAppData$}
+            class="px-3.5 py-2 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-900 font-bold text-xs transition-colors cursor-pointer flex items-center gap-1.5"
           >
             <SvgIcon name="refresh" size={13} />
-            <span>Recharger data.csv</span>
+            <span>Remettre à zéro (local)</span>
           </button>
         </div>
       </div>

@@ -72,7 +72,7 @@ export const AccountModal = component$<AccountModalProps>(({ isOpen, onClose$, o
 
     if (editAccount) {
       state.name = editAccount.name;
-      state.types = getAccountTypes(editAccount);
+      state.types = JSON.parse(JSON.stringify(getAccountTypes(editAccount)));
       state.currencyCode = editAccount.currencyCode;
       state.balance = String(editAccount.balance);
       state.color = editAccount.color || '#F59E0B';
@@ -116,7 +116,8 @@ export const AccountModal = component$<AccountModalProps>(({ isOpen, onClose$, o
 
     state.loading = true;
 
-    const primaryType = state.types.length > 0 ? state.types[0] : 'checking';
+    const cleanTypes: AccountType[] = JSON.parse(JSON.stringify(state.types));
+    const primaryType = cleanTypes.length > 0 ? cleanTypes[0] : 'checking';
 
     try {
       if (editAccount) {
@@ -136,7 +137,7 @@ export const AccountModal = component$<AccountModalProps>(({ isOpen, onClose$, o
         await db.accounts.update(editAccount.id!, {
           name: state.name.trim(),
           type: primaryType,
-          types: state.types,
+          types: cleanTypes,
           currencyCode: state.currencyCode,
           balance: val,
           color: state.color,
@@ -146,7 +147,7 @@ export const AccountModal = component$<AccountModalProps>(({ isOpen, onClose$, o
         await db.accounts.add({
           name: state.name.trim(),
           type: primaryType,
-          types: state.types,
+          types: cleanTypes,
           currencyCode: state.currencyCode,
           balance: val,
           color: state.color,

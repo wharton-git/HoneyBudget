@@ -246,6 +246,8 @@ export default component$(() => {
             }))
         : undefined;
 
+      const cleanItems = groupItemsToSave ? JSON.parse(JSON.stringify(groupItemsToSave)) : undefined;
+
       // Apply new / updated transaction
       if (state.editTxId === 0) {
         await db.transactions.add({
@@ -259,7 +261,7 @@ export default component$(() => {
           notes: notes || undefined,
           type: state.type,
           isGroup: state.isGroup,
-          items: groupItemsToSave,
+          items: cleanItems,
         });
       } else {
         await db.transactions.update(state.editTxId, {
@@ -273,7 +275,7 @@ export default component$(() => {
           notes: notes || undefined,
           type: state.type,
           isGroup: state.isGroup,
-          items: groupItemsToSave,
+          items: cleanItems,
         });
       }
 

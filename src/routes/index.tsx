@@ -341,6 +341,14 @@ export default component$(() => {
                         )}
                         <span>•</span>
                         <span class="text-amber-800 font-bold">{acc?.name}</span>
+                        {tx.fee && tx.fee > 0 && (
+                          <>
+                            <span>•</span>
+                            <span class="text-amber-900 font-bold bg-amber-100/90 px-1.5 py-0.2 rounded-md text-[10px]">
+                              frais: {formatMoney(tx.fee, acc?.currencyCode || 'EUR', lang === 'en' ? 'en-US' : 'fr-FR')}
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -358,6 +366,11 @@ export default component$(() => {
                       {isIncome ? '+' : isTransfer ? '' : '-'}
                       {formatMoney(tx.amount, acc?.currencyCode || 'EUR', lang === 'en' ? 'en-US' : 'fr-FR')}
                     </div>
+                    {tx.fee && tx.fee > 0 && (
+                      <div class="text-[10px] font-bold text-amber-800 bg-amber-100/80 px-1.5 py-0.2 rounded-md inline-block mt-0.5">
+                        + frais : {formatMoney(tx.fee, acc?.currencyCode || 'EUR', lang === 'en' ? 'en-US' : 'fr-FR')}
+                      </div>
+                    )}
                     {acc && acc.currencyCode !== state.baseCurrency && (
                       <div class="text-[10px] font-bold text-amber-700/90 mt-0.5">
                         ≈ {isIncome ? '+' : isTransfer ? '' : '-'}

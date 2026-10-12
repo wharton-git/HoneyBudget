@@ -25,6 +25,7 @@ export default component$(() => {
     targetAccountId: 0,
     categoryId: 0,
     amount: '',
+    fee: '',
     currencyCode: 'EUR',
     rates: {} as Record<string, number>,
     date: '',
@@ -70,6 +71,9 @@ export default component$(() => {
     if (newAcc && oldAcc && state.currencyCode === oldAcc.currencyCode) {
       state.currencyCode = newAcc.currencyCode;
     }
+    if (newAcc?.type === 'cash') {
+      state.fee = '0';
+    }
   });
 
   // eslint-disable-next-line qwik/no-use-visible-task
@@ -109,6 +113,7 @@ export default component$(() => {
       state.targetAccountId = editTransaction.targetAccountId || 0;
       state.categoryId = editTransaction.categoryId;
       state.amount = String(editTransaction.amount);
+      state.fee = editTransaction.fee ? String(editTransaction.fee) : '';
       const acc = accounts.find((a) => a.id === editTransaction.accountId);
       state.currencyCode = acc?.currencyCode || settings?.baseCurrency || 'EUR';
       state.date = editTransaction.date;
@@ -122,6 +127,7 @@ export default component$(() => {
         { id: '1', name: '', amount: '', quantity: '1' },
       ];
       state.amount = '';
+      state.fee = '';
       state.label = '';
       state.notes = '';
 
@@ -207,14 +213,15 @@ export default component$(() => {
         const prevTx = await db.transactions.get(state.editTxId);
         if (prevTx) {
           const prevAcc = await db.accounts.get(prevTx.accountId);
+          const prevFee = prevTx.fee || 0;
           if (prevAcc) {
             if (prevTx.type === 'expense') {
-              await db.accounts.update(prevAcc.id!, { balance: prevAcc.balance + prevTx.amount });
+              await db.accounts.update(prevAcc.id!, { balance: prevAcc.balance + (prevTx.amount + prevFee) });
             } else if (prevTx.type === 'income') {
-              await db.accounts.update(prevAcc.id!, { balance: prevAcc.balance - prevTx.amount });
+              await db.accounts.update(prevAcc.id!, { balance: prevAcc.balance - (prevTx.amount - prevFee) });
             } else if (prevTx.type === 'transfer' && prevTx.targetAccountId) {
               const prevTarget = await db.accounts.get(prevTx.targetAccountId);
-              await db.accounts.update(prevAcc.id!, { balance: prevAcc.balance + prevTx.amount });
+              await db.accounts.update(prevAcc.id!, { balance: prevAcc.balance + (prevTx.amount + prevFee) });
               if (prevTarget) {
                 const prevTargetVal = convertCurrency(prevTx.amount, prevAcc.currencyCode, prevTarget.currencyCode, state.rates);
                 const dec = getCurrencyDecimals(prevTarget.currencyCode);
@@ -225,6 +232,8 @@ export default component$(() => {
           }
         }
       }
+
+      const fee = selectedAccount.type !== 'cash' && !isNaN(parseFloat(state.fee)) ? Math.max(0, parseFloat(state.fee)) : 0;
 
       const groupItemsToSave = state.isGroup
         ? state.groupItems
@@ -244,6 +253,7 @@ export default component$(() => {
           targetAccountId: state.type === 'transfer' ? state.targetAccountId : undefined,
           categoryId: state.categoryId,
           amount: val,
+          fee: fee > 0 ? fee : undefined,
           date: state.date,
           label: state.label.trim(),
           notes: notes || undefined,
@@ -257,6 +267,7 @@ export default component$(() => {
           targetAccountId: state.type === 'transfer' ? state.targetAccountId : undefined,
           categoryId: state.categoryId,
           amount: val,
+          fee: fee > 0 ? fee : undefined,
           date: state.date,
           label: state.label.trim(),
           notes: notes || undefined,
@@ -266,22 +277,22 @@ export default component$(() => {
         });
       }
 
-      // Apply new balance delta
+      // Apply new balance delta (including fee for non-cash accounts)
       const updatedAcc = await db.accounts.get(state.accountId);
       if (updatedAcc) {
         if (state.type === 'expense') {
           await db.accounts.update(state.accountId, {
-            balance: updatedAcc.balance - val,
+            balance: updatedAcc.balance - (val + fee),
           });
         } else if (state.type === 'income') {
           await db.accounts.update(state.accountId, {
-            balance: updatedAcc.balance + val,
+            balance: updatedAcc.balance + (val - fee),
           });
         } else if (state.type === 'transfer') {
           const targetAccount = await db.accounts.get(state.targetAccountId);
           if (targetAccount) {
             await db.accounts.update(state.accountId, {
-              balance: updatedAcc.balance - val,
+              balance: updatedAcc.balance - (val + fee),
             });
             const targetVal = convertCurrency(val, updatedAcc.currencyCode, targetAccount.currencyCode, state.rates);
             const dec = getCurrencyDecimals(targetAccount.currencyCode);
@@ -692,6 +703,97 @@ export default component$(() => {
             </div>
           )}
         </div>
+
+        {/* 4.5 Frais de transaction (pour les comptes autres que le cash) */}
+        {currentAccount && currentAccount.type !== 'cash' && (
+          <div class="p-4 bg-amber-50/70 rounded-2xl border-2 border-amber-200/90 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-amber-200 text-amber-900 flex items-center justify-center">
+                  <SvgIcon name="tag" size={14} />
+                </div>
+                <div>
+                  <span class="text-xs font-black text-amber-950 block">
+                    Frais de transaction
+                  </span>
+                  <span class="text-[11px] font-medium text-slate-500">
+                    Frais prélevés sur {currentAccount.name} ({currentAccount.currencyCode})
+                  </span>
+                </div>
+              </div>
+
+              {parseFloat(state.fee) > 0 && (
+                <button
+                  type="button"
+                  onClick$={() => (state.fee = '0')}
+                  class="text-[11px] font-bold text-rose-600 hover:text-rose-800 transition-colors cursor-pointer"
+                >
+                  Annuler les frais
+                </button>
+              )}
+            </div>
+
+            <div class="flex items-center gap-2">
+              <div class="relative flex-1">
+                <input
+                  type="number"
+                  step="any"
+                  min="0"
+                  value={state.fee}
+                  onInput$={(e: any) => (state.fee = e.target.value)}
+                  placeholder="0.00"
+                  class="w-full text-base font-bold text-amber-950 px-3.5 py-2.5 rounded-xl border border-amber-200 focus:border-amber-400 focus:outline-none bg-white"
+                />
+              </div>
+              <div class="px-3.5 py-2.5 bg-amber-100 rounded-xl text-xs font-black text-amber-900 shrink-0">
+                {currentAccount.currencyCode}
+              </div>
+            </div>
+
+            {/* Quick shortcuts for MGA accounts */}
+            {currentAccount.currencyCode === 'MGA' && (
+              <div class="flex items-center gap-1.5 flex-wrap pt-0.5">
+                <span class="text-[10px] font-bold text-slate-500 mr-1">Raccourcis :</span>
+                {[0, 100, 200, 300, 500, 1000, 1500, 2000].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick$={() => (state.fee = String(preset))}
+                    class={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                      parseFloat(state.fee) === preset
+                        ? 'bg-amber-400 text-amber-950 shadow-2xs font-black'
+                        : 'bg-white border border-amber-200 text-amber-900 hover:bg-amber-100'
+                    }`}
+                  >
+                    {preset === 0 ? '0' : `+${preset} Ar`}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Live summary computation */}
+            {parseFloat(state.fee) > 0 && (
+              <div class="pt-2 border-t border-amber-200/60 text-xs font-bold text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                <span class="text-amber-800 text-[11px]">
+                  {state.type === 'expense'
+                    ? 'Total réel débité du compte :'
+                    : state.type === 'transfer'
+                    ? 'Total débité du compte émetteur :'
+                    : 'Montant net crédité :'}
+                </span>
+                <span class="font-black text-sm text-amber-950">
+                  {formatMoney(
+                    state.type === 'income'
+                      ? Math.max(0, (parseFloat(state.amount) || 0) - (parseFloat(state.fee) || 0))
+                      : (parseFloat(state.amount) || 0) + (parseFloat(state.fee) || 0),
+                    currentAccount.currencyCode,
+                    lang === 'en' ? 'en-US' : 'fr-FR'
+                  )}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 5. Date & Time Picker */}
         <HoneyDateTimePicker

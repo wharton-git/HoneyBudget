@@ -31,6 +31,7 @@ export interface Transaction {
   id?: number;
   accountId: number;
   amount: number; // always positive in storage; type tells if it's expense/income/transfer
+  fee?: number; // frais de transaction pour les comptes hors espèces (ex: mobile money, banques)
   date: string; // YYYY-MM-DD or YYYY-MM-DD HH:mm
   categoryId: number;
   label: string;

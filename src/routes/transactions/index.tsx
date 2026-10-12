@@ -103,6 +103,7 @@ export default component$(() => {
     if (!title || !title.trim()) return;
 
     const totalAmount = toGroup.reduce((sum, t) => sum + t.amount, 0);
+    const totalFees = toGroup.reduce((sum, t) => sum + (t.fee || 0), 0);
     const items = toGroup.map((t, idx) => ({
       id: String(idx + 1),
       name: t.label,
@@ -114,6 +115,7 @@ export default component$(() => {
       accountId: firstAcc,
       categoryId: toGroup[0].categoryId,
       amount: totalAmount,
+      fee: totalFees > 0 ? totalFees : undefined,
       date: toGroup[0].date,
       label: title.trim(),
       type: toGroup[0].type,
@@ -130,20 +132,20 @@ export default component$(() => {
     await loadData$();
   });
 
-
   const handleDelete$ = $(async (tx: Transaction) => {
     if (confirm('Voulez-vous supprimer cette opération ?')) {
       await db.transactions.delete(tx.id!);
-      // Revert account balance
+      // Revert account balance (including fee for non-cash accounts)
       const acc = await db.accounts.get(tx.accountId);
+      const fee = tx.fee || 0;
       if (acc) {
         if (tx.type === 'expense') {
-          await db.accounts.update(acc.id!, { balance: acc.balance + tx.amount });
+          await db.accounts.update(acc.id!, { balance: acc.balance + (tx.amount + fee) });
         } else if (tx.type === 'income') {
-          await db.accounts.update(acc.id!, { balance: acc.balance - tx.amount });
+          await db.accounts.update(acc.id!, { balance: acc.balance - (tx.amount - fee) });
         } else if (tx.type === 'transfer' && tx.targetAccountId) {
           const target = await db.accounts.get(tx.targetAccountId);
-          await db.accounts.update(acc.id!, { balance: acc.balance + tx.amount });
+          await db.accounts.update(acc.id!, { balance: acc.balance + (tx.amount + fee) });
           if (target) {
             const targetVal = convertCurrency(tx.amount, acc.currencyCode, target.currencyCode, state.rates);
             const dec = getCurrencyDecimals(target.currencyCode);
@@ -367,6 +369,14 @@ export default component$(() => {
                         )}
                         <span>•</span>
                         <span class="text-amber-800 font-bold">{acc?.name}</span>
+                        {tx.fee && tx.fee > 0 && (
+                          <>
+                            <span>•</span>
+                            <span class="text-amber-900 font-bold bg-amber-100/90 px-1.5 py-0.2 rounded-md text-[10px]">
+                              frais: {formatMoney(tx.fee, acc?.currencyCode || 'EUR', lang === 'en' ? 'en-US' : 'fr-FR')}
+                            </span>
+                          </>
+                        )}
                         {tx.notes && (
                           <>
                             <span>•</span>
@@ -391,6 +401,11 @@ export default component$(() => {
                         {isIncome ? '+' : isTransfer ? '' : '-'}
                         {formatMoney(tx.amount, acc?.currencyCode || 'EUR', lang === 'en' ? 'en-US' : 'fr-FR')}
                       </div>
+                      {tx.fee && tx.fee > 0 && (
+                        <div class="text-[10px] font-bold text-amber-800 bg-amber-100/80 px-1.5 py-0.5 rounded-md inline-block mt-0.5">
+                          + frais : {formatMoney(tx.fee, acc?.currencyCode || 'EUR', lang === 'en' ? 'en-US' : 'fr-FR')}
+                        </div>
+                      )}
                       {acc && acc.currencyCode !== state.baseCurrency && (
                         <div class="text-[11px] font-bold text-amber-700/90 mt-0.5">
                           ≈ {isIncome ? '+' : isTransfer ? '' : '-'}

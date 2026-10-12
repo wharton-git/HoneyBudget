@@ -41,6 +41,7 @@ export default component$(() => {
     currentIncome: 0,
     currentExpense: 0,
     currentSavings: 0,
+    currentFees: 0,
     savingsRate: 0,
     txCount: 0,
     avgDailyExpense: 0,
@@ -99,13 +100,16 @@ export default component$(() => {
       const acc = accounts.find((a) => a.id === tx.accountId);
       const accCur = acc?.currencyCode || state.baseCurrency;
       const amountInBase = convertCurrency(tx.amount, accCur, state.baseCurrency, state.rates);
+      const feeInBase = tx.fee ? convertCurrency(tx.fee, accCur, state.baseCurrency, state.rates) : 0;
 
       if (tx.type === 'income') {
-        monthlyMap[ym].income += amountInBase;
+        monthlyMap[ym].income += Math.max(0, amountInBase - feeInBase);
         monthlyMap[ym].count += 1;
       } else if (tx.type === 'expense') {
-        monthlyMap[ym].expense += amountInBase;
+        monthlyMap[ym].expense += (amountInBase + feeInBase);
         monthlyMap[ym].count += 1;
+      } else if (tx.type === 'transfer' && feeInBase > 0) {
+        monthlyMap[ym].expense += feeInBase;
       }
     });
 
@@ -134,6 +138,7 @@ export default component$(() => {
     const curMonth = state.selectedMonth;
     let income = 0;
     let expense = 0;
+    let totalFees = 0;
     let count = 0;
     const catMap: Record<number, number> = {};
     const dayMap: Record<number, number> = {};
@@ -156,24 +161,36 @@ export default component$(() => {
       const acc = accounts.find((a) => a.id === tx.accountId);
       const accCur = acc?.currencyCode || state.baseCurrency;
       const inBase = convertCurrency(tx.amount, accCur, state.baseCurrency, state.rates);
+      const feeInBase = tx.fee ? convertCurrency(tx.fee, accCur, state.baseCurrency, state.rates) : 0;
+      totalFees += feeInBase;
 
       const dayNum = parseInt(tx.date.substring(8, 10), 10);
 
       if (tx.type === 'income') {
-        income += inBase;
+        const netIncome = Math.max(0, inBase - feeInBase);
+        income += netIncome;
         count += 1;
         if (accFlowMap[tx.accountId]) {
-          accFlowMap[tx.accountId].income += inBase;
+          accFlowMap[tx.accountId].income += netIncome;
         }
       } else if (tx.type === 'expense') {
-        expense += inBase;
+        const totalExpense = inBase + feeInBase;
+        expense += totalExpense;
         count += 1;
-        catMap[tx.categoryId] = (catMap[tx.categoryId] || 0) + inBase;
+        catMap[tx.categoryId] = (catMap[tx.categoryId] || 0) + totalExpense;
         if (!isNaN(dayNum) && dayNum >= 1 && dayNum <= totalDays) {
-          dayMap[dayNum] = (dayMap[dayNum] || 0) + inBase;
+          dayMap[dayNum] = (dayMap[dayNum] || 0) + totalExpense;
         }
         if (accFlowMap[tx.accountId]) {
-          accFlowMap[tx.accountId].expense += inBase;
+          accFlowMap[tx.accountId].expense += totalExpense;
+        }
+      } else if (tx.type === 'transfer' && feeInBase > 0) {
+        expense += feeInBase;
+        if (!isNaN(dayNum) && dayNum >= 1 && dayNum <= totalDays) {
+          dayMap[dayNum] = (dayMap[dayNum] || 0) + feeInBase;
+        }
+        if (accFlowMap[tx.accountId]) {
+          accFlowMap[tx.accountId].expense += feeInBase;
         }
       }
     });
@@ -181,6 +198,7 @@ export default component$(() => {
     state.currentIncome = Math.round(income);
     state.currentExpense = Math.round(expense);
     state.currentSavings = Math.round(income - expense);
+    state.currentFees = Math.round(totalFees);
     state.savingsRate = income > 0 ? Math.round(((income - expense) / income) * 100) : 0;
     state.txCount = count;
     state.avgDailyExpense = Math.round(expense / totalDays);
@@ -306,8 +324,13 @@ export default component$(() => {
           <div class="text-lg sm:text-xl font-black text-rose-950 truncate">
             {formatMoney(state.currentExpense, state.baseCurrency, lang === 'en' ? 'en-US' : 'fr-FR')}
           </div>
-          <div class="text-[10px] font-semibold text-rose-600">
-            {state.txCount} {t(lang, 'reports.operations_count').toLowerCase()}
+          <div class="text-[10px] font-semibold text-rose-600 flex items-center justify-between gap-1 flex-wrap">
+            <span>{state.txCount} {t(lang, 'reports.operations_count').toLowerCase()}</span>
+            {state.currentFees > 0 && (
+              <span class="text-amber-900 font-bold bg-amber-100 px-1.5 py-0.2 rounded-md text-[9px]">
+                dont {formatMoney(state.currentFees, state.baseCurrency, lang === 'en' ? 'en-US' : 'fr-FR')} de frais
+              </span>
+            )}
           </div>
         </div>
 

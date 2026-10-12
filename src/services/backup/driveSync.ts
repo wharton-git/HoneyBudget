@@ -162,7 +162,7 @@ export const decryptData = async (cipherTextWithMarker: string, passphrase: stri
   return arrayBufferToString(decryptedBuffer);
 };
 
-// --- Google Drive Export (Zero Google Cloud Console) ---
+// --- Local JSON File Export & Import ---
 
 export interface SaveResult {
   method: 'file-system-picker' | 'web-share' | 'download';
@@ -170,12 +170,12 @@ export interface SaveResult {
 }
 
 /**
- * Save to Google Drive without GCP:
- * 1. Desktop: File System Access API (can select local Google Drive folder)
- * 2. Mobile: Web Share API (opens system picker with Google Drive option)
+ * Export local data file:
+ * 1. Desktop: File System Access API
+ * 2. Mobile: Web Share API
  * 3. Fallback: Standard browser download
  */
-export const saveBackupWithoutGCP = async (passphrase?: string): Promise<SaveResult> => {
+export const exportLocalBackup = async (passphrase?: string): Promise<SaveResult> => {
   const data = await generateBackupData();
   let content = JSON.stringify(data, null, 2);
   let fileName = `HoneyBudget_Sauvegarde_${new Date().toISOString().split('T')[0]}.json`;
@@ -188,7 +188,7 @@ export const saveBackupWithoutGCP = async (passphrase?: string): Promise<SaveRes
   const blob = new Blob([content], { type: 'application/json' });
   const file = new File([blob], fileName, { type: 'application/json' });
 
-  // 1. Try Web Share API (especially on mobile: prompts "Save to Google Drive")
+  // 1. Try Web Share API (especially on mobile)
   if (typeof navigator !== 'undefined' && 'canShare' in navigator && navigator.canShare && navigator.canShare({ files: [file] })) {
     try {
       await navigator.share({
@@ -206,7 +206,7 @@ export const saveBackupWithoutGCP = async (passphrase?: string): Promise<SaveRes
     }
   }
 
-  // 2. Try File System Access API (Desktop: user selects their local Google Drive synced directory)
+  // 2. Try File System Access API
   if (typeof window !== 'undefined' && 'showSaveFilePicker' in window) {
     try {
       const handle = await (window as any).showSaveFilePicker({
@@ -243,3 +243,6 @@ export const saveBackupWithoutGCP = async (passphrase?: string): Promise<SaveRes
 
   return { method: 'download', success: true };
 };
+
+// Backwards-compatibility alias
+export const saveBackupWithoutGCP = exportLocalBackup;

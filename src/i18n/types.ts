@@ -101,17 +101,31 @@ export interface Translations {
   'currency.last_updated': string;
   'currency.offline_warning': string;
 
-  // Backup & Google Drive
-  'backup.title': string;
-  'backup.desc': string;
-  'backup.drive_sync': string;
-  'backup.drive_zero_gcp': string;
-  'backup.desktop_instruction': string;
-  'backup.mobile_instruction': string;
+  // Cloud Sync & Supabase
+  'sync.title': string;
+  'sync.desc': string;
+  'sync.supabase_badge': string;
+  'sync.offline_note': string;
+  'sync.login_title': string;
+  'sync.login_desc': string;
+  'sync.email': string;
+  'sync.password': string;
+  'sync.signin': string;
+  'sync.signup': string;
+  'sync.signout': string;
+  'sync.connected_as': string;
+  'sync.sync_now': string;
+  'sync.push_cloud': string;
+  'sync.pull_cloud': string;
+  'sync.last_sync': string;
+  'sync.never': string;
+  'sync.success': string;
+  'sync.syncing': string;
+  'sync.error': string;
+
+  // Local JSON Backup
   'backup.export_now': string;
   'backup.import_now': string;
-  'backup.save_to_drive': string;
-  'backup.restore_from_drive': string;
   'backup.encryption_title': string;
   'backup.encryption_desc': string;
   'backup.passphrase': string;

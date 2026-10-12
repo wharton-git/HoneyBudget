@@ -386,7 +386,7 @@ export const head: DocumentHead = {
   meta: [
     {
       name: "description",
-      content: "HoneyBudget: PWA de gestion de budget et de comptes synchronisée avec Google Drive",
+      content: "HoneyBudget: PWA de gestion de budget et de comptes synchronisée avec Supabase",
     },
   ],
 };

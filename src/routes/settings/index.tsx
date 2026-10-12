@@ -12,10 +12,23 @@ import {
   getCurrencyDecimals,
 } from '../../services/currency/ratesService';
 import {
-  saveBackupWithoutGCP,
+  exportLocalBackup,
   restoreBackupData,
   decryptData,
 } from '../../services/backup/driveSync';
+import {
+  getCurrentUser,
+  signInWithEmail,
+  signUpWithEmail,
+  signOutUser,
+  subscribeToAuthChanges,
+} from '../../services/supabase/auth';
+import {
+  syncWithSupabase,
+  pushLocalToSupabase,
+  pullRemoteFromSupabase,
+  getLastSyncTime,
+} from '../../services/supabase/sync';
 
 export default component$(() => {
   const { lang, setLang$ } = useI18n();
@@ -32,6 +45,15 @@ export default component$(() => {
     restorePassphrase: '',
     showRestorePassModal: false,
     pendingEncryptedContent: '',
+    // Supabase Auth & Sync state
+    userId: '',
+    userEmail: '',
+    authEmail: '',
+    authPassword: '',
+    authMode: 'signin' as 'signin' | 'signup',
+    isAuthLoading: false,
+    isSyncing: false,
+    lastSyncTime: '',
   });
 
   const loadSettings$ = $(async () => {
@@ -43,10 +65,33 @@ export default component$(() => {
     }
   });
 
+  const checkAuth$ = $(async () => {
+    const user = await getCurrentUser();
+    if (user) {
+      state.userId = user.id;
+      state.userEmail = user.email || '';
+    } else {
+      state.userId = '';
+      state.userEmail = '';
+    }
+    state.lastSyncTime = getLastSyncTime() || '';
+  });
+
   // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(async () => {
     state.lang = lang;
     await loadSettings$();
+    await checkAuth$();
+
+    subscribeToAuthChanges((_event, session) => {
+      if (session?.user) {
+        state.userId = session.user.id;
+        state.userEmail = session.user.email || '';
+      } else {
+        state.userId = '';
+        state.userEmail = '';
+      }
+    });
   });
 
   const handleBaseCurrencyChange$ = $(async (newCur: string) => {
@@ -117,11 +162,160 @@ export default component$(() => {
     }
   });
 
-  const handleSaveToDrive$ = $(async () => {
-
+  const handleSignIn$ = $(async () => {
+    if (!state.authEmail || !state.authPassword) {
+      state.statusMessage = 'Veuillez saisir votre email et mot de passe.';
+      state.statusType = 'error';
+      return;
+    }
+    state.isAuthLoading = true;
     state.statusMessage = '';
     try {
-      const res = await saveBackupWithoutGCP(state.passphrase);
+      const res = await signInWithEmail(state.authEmail, state.authPassword);
+      if (res.user) {
+        state.userId = res.user.id;
+        state.userEmail = res.user.email || '';
+        state.statusMessage = `Connecté en tant que ${res.user.email}`;
+        state.statusType = 'success';
+        // Auto sync after login
+        state.isSyncing = true;
+        try {
+          const syncRes = await syncWithSupabase(res.user.id);
+          state.lastSyncTime = syncRes.timestamp;
+          state.statusMessage = `Connecté ! Données synchronisées avec succès.`;
+          await loadSettings$();
+        } catch (syncErr: any) {
+          console.warn('Sync warning:', syncErr);
+        } finally {
+          state.isSyncing = false;
+        }
+      }
+    } catch (e: any) {
+      console.error(e);
+      state.statusMessage = e.message || 'Erreur lors de la connexion.';
+      state.statusType = 'error';
+    } finally {
+      state.isAuthLoading = false;
+    }
+  });
+
+  const handleSignUp$ = $(async () => {
+    if (!state.authEmail || !state.authPassword) {
+      state.statusMessage = 'Veuillez saisir votre email et mot de passe.';
+      state.statusType = 'error';
+      return;
+    }
+    state.isAuthLoading = true;
+    state.statusMessage = '';
+    try {
+      const res = await signUpWithEmail(state.authEmail, state.authPassword);
+      if (res.user) {
+        state.userId = res.user.id;
+        state.userEmail = res.user.email || '';
+        state.statusMessage = `Compte créé ! Initialisation de votre espace sécurisé...`;
+        state.statusType = 'success';
+        // Initial sync to upload existing local data into user's isolated cloud store
+        state.isSyncing = true;
+        try {
+          const syncRes = await pushLocalToSupabase(res.user.id);
+          state.lastSyncTime = new Date().toISOString();
+          state.statusMessage = `Compte créé et ${syncRes.transactions} opérations sauvegardées sur Supabase !`;
+        } catch (syncErr: any) {
+          console.warn('Initial push error:', syncErr);
+        } finally {
+          state.isSyncing = false;
+        }
+      }
+    } catch (e: any) {
+      console.error(e);
+      state.statusMessage = e.message || 'Erreur lors de la création du compte.';
+      state.statusType = 'error';
+    } finally {
+      state.isAuthLoading = false;
+    }
+  });
+
+  const handleSignOut$ = $(async () => {
+    state.isAuthLoading = true;
+    state.statusMessage = '';
+    try {
+      await signOutUser();
+      state.userId = '';
+      state.userEmail = '';
+      state.statusMessage = 'Déconnecté de Supabase. Vos données locales restent conservées hors-ligne.';
+      state.statusType = 'success';
+    } catch (e: any) {
+      console.error(e);
+      state.statusMessage = e.message || 'Erreur lors de la déconnexion.';
+      state.statusType = 'error';
+    } finally {
+      state.isAuthLoading = false;
+    }
+  });
+
+  const handleSyncNow$ = $(async () => {
+    if (!state.userId) return;
+    state.isSyncing = true;
+    state.statusMessage = '';
+    try {
+      const res = await syncWithSupabase(state.userId);
+      state.lastSyncTime = res.timestamp;
+      state.statusMessage = translate(state.lang, 'sync.success');
+      state.statusType = 'success';
+      await loadSettings$();
+    } catch (e: any) {
+      console.error(e);
+      state.statusMessage = e.message || translate(state.lang, 'sync.error');
+      state.statusType = 'error';
+    } finally {
+      state.isSyncing = false;
+    }
+  });
+
+  const handlePushCloud$ = $(async () => {
+    if (!state.userId) return;
+    state.isSyncing = true;
+    state.statusMessage = '';
+    try {
+      const res = await pushLocalToSupabase(state.userId);
+      state.lastSyncTime = new Date().toISOString();
+      state.statusMessage = `${res.transactions} opérations envoyées vers votre cloud Supabase !`;
+      state.statusType = 'success';
+    } catch (e: any) {
+      console.error(e);
+      state.statusMessage = e.message || 'Erreur lors de l\'envoi vers le cloud.';
+      state.statusType = 'error';
+    } finally {
+      state.isSyncing = false;
+    }
+  });
+
+  const handlePullCloud$ = $(async () => {
+    if (!state.userId) return;
+    state.isSyncing = true;
+    state.statusMessage = '';
+    try {
+      const res = await pullRemoteFromSupabase(state.userId);
+      state.lastSyncTime = new Date().toISOString();
+      state.statusMessage = `${res.transactions} opérations récupérées depuis votre cloud Supabase !`;
+      state.statusType = 'success';
+      await loadSettings$();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('honey_currency_changed', { detail: { baseCurrency: state.baseCurrency } }));
+      }
+    } catch (e: any) {
+      console.error(e);
+      state.statusMessage = e.message || 'Erreur lors de la récupération depuis le cloud.';
+      state.statusType = 'error';
+    } finally {
+      state.isSyncing = false;
+    }
+  });
+
+  const handleExportLocal$ = $(async () => {
+    state.statusMessage = '';
+    try {
+      const res = await exportLocalBackup(state.passphrase);
       if (res.success) {
         state.statusMessage = translate(state.lang, 'backup.success');
         state.statusType = 'success';
@@ -288,15 +482,181 @@ export default component$(() => {
         </div>
       </div>
 
-      {/* 3. Google Drive Backup & Restore */}
+      {/* 3. Supabase Cloud Sync (User Isolation & Offline Sync) */}
+      <div id="sync" class="bg-white rounded-3xl p-5 border-2 border-amber-100 shadow-xs space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-black text-amber-950 flex items-center gap-2">
+            <SvgIcon name="cloud" size={18} class="text-amber-600" />
+            <span>{t(lang, 'sync.title')}</span>
+          </h3>
+          <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1">
+            <SvgIcon name="shield" size={11} />
+            <span>{t(lang, 'sync.supabase_badge')}</span>
+          </span>
+        </div>
+
+        <p class="text-xs text-slate-600 leading-relaxed">
+          {t(lang, 'sync.offline_note')}
+        </p>
+
+        {state.userId ? (
+          /* Logged In View */
+          <div class="space-y-4 pt-1">
+            <div class="p-3.5 rounded-2xl bg-amber-50/60 border border-amber-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-full bg-amber-200 flex items-center justify-center text-amber-900 shrink-0">
+                  <SvgIcon name="user" size={16} />
+                </div>
+                <div>
+                  <div class="text-xs font-black text-amber-950">{state.userEmail}</div>
+                  <div class="text-[10px] font-semibold text-emerald-700 flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+                    <span>Isolation RLS active</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="text-right">
+                <span class="text-[10px] text-slate-500 block">
+                  {t(lang, 'sync.last_sync')} :
+                </span>
+                <span class="text-xs font-bold text-amber-950">
+                  {state.lastSyncTime ? new Date(state.lastSyncTime).toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-US') : t(lang, 'sync.never')}
+                </span>
+              </div>
+            </div>
+
+            {/* Main Sync Button */}
+            <button
+              type="button"
+              onClick$={handleSyncNow$}
+              disabled={state.isSyncing}
+              class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-xs shadow-md active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+            >
+              <SvgIcon name="refresh" size={16} class={state.isSyncing ? 'animate-spin' : ''} />
+              <span>{state.isSyncing ? t(lang, 'sync.syncing') : t(lang, 'sync.sync_now')}</span>
+            </button>
+
+            {/* Secondary actions: Push / Pull / Logout */}
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+              <button
+                type="button"
+                onClick$={handlePushCloud$}
+                disabled={state.isSyncing}
+                class="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-amber-200 hover:bg-amber-50 text-amber-900 font-bold text-xs transition-colors cursor-pointer"
+                title="Envoyer les données locales vers Supabase"
+              >
+                <SvgIcon name="arrow-up" size={14} class="text-amber-600" />
+                <span>{t(lang, 'sync.push_cloud')}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick$={handlePullCloud$}
+                disabled={state.isSyncing}
+                class="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-amber-200 hover:bg-amber-50 text-amber-900 font-bold text-xs transition-colors cursor-pointer"
+                title="Télécharger les données depuis Supabase vers IndexedDB"
+              >
+                <SvgIcon name="arrow-down" size={14} class="text-amber-600" />
+                <span>{t(lang, 'sync.pull_cloud')}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick$={handleSignOut$}
+                disabled={state.isAuthLoading}
+                class="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-rose-200 hover:bg-rose-50 text-rose-800 font-bold text-xs transition-colors cursor-pointer"
+              >
+                <SvgIcon name="x" size={14} />
+                <span>{t(lang, 'sync.signout')}</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Logged Out: Auth Form */
+          <div class="space-y-3.5 pt-1">
+            {/* Mode switch */}
+            <div class="flex items-center bg-amber-50/80 p-1 rounded-2xl border border-amber-200/80 text-xs font-bold">
+              <button
+                type="button"
+                onClick$={() => (state.authMode = 'signin')}
+                class={`flex-1 py-1.5 rounded-xl transition-all ${
+                  state.authMode === 'signin'
+                    ? 'bg-amber-400 text-amber-950 shadow-xs'
+                    : 'text-amber-800 hover:text-amber-950'
+                }`}
+              >
+                {t(lang, 'sync.signin')}
+              </button>
+              <button
+                type="button"
+                onClick$={() => (state.authMode = 'signup')}
+                class={`flex-1 py-1.5 rounded-xl transition-all ${
+                  state.authMode === 'signup'
+                    ? 'bg-amber-400 text-amber-950 shadow-xs'
+                    : 'text-amber-800 hover:text-amber-950'
+                }`}
+              >
+                {t(lang, 'sync.signup')}
+              </button>
+            </div>
+
+            <div class="space-y-2">
+              <div>
+                <label class="block text-xs font-bold text-amber-900 mb-1">
+                  {t(lang, 'sync.email')}
+                </label>
+                <input
+                  type="email"
+                  value={state.authEmail}
+                  onInput$={(e: any) => (state.authEmail = e.target.value)}
+                  placeholder="nom@exemple.com"
+                  class="w-full text-xs font-semibold text-slate-800 px-3.5 py-2.5 rounded-2xl border-2 border-amber-200 focus:border-amber-400 focus:outline-none bg-amber-50/20"
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-amber-900 mb-1">
+                  {t(lang, 'sync.password')}
+                </label>
+                <input
+                  type="password"
+                  value={state.authPassword}
+                  onInput$={(e: any) => (state.authPassword = e.target.value)}
+                  placeholder="Minimum 6 caractères"
+                  class="w-full text-xs font-semibold text-slate-800 px-3.5 py-2.5 rounded-2xl border-2 border-amber-200 focus:border-amber-400 focus:outline-none bg-amber-50/20"
+                />
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick$={state.authMode === 'signin' ? handleSignIn$ : handleSignUp$}
+              disabled={state.isAuthLoading}
+              class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-xs shadow-md active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+            >
+              <SvgIcon name="cloud" size={16} />
+              <span>
+                {state.isAuthLoading
+                  ? t(lang, 'common.loading')
+                  : state.authMode === 'signin'
+                  ? t(lang, 'sync.signin')
+                  : t(lang, 'sync.signup')}
+              </span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* 4. Local Backup (JSON) & Initial Data */}
       <div class="bg-white rounded-3xl p-5 border-2 border-amber-100 shadow-xs space-y-4">
         <div class="flex items-center justify-between">
           <h3 class="text-sm font-black text-amber-950 flex items-center gap-2">
             <SvgIcon name="download" size={18} class="text-amber-600" />
-            <span>{t(lang, 'backup.title')}</span>
+            <span>Sauvegarde Locale (Fichier JSON)</span>
           </h3>
-          <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-            {t(lang, 'backup.drive_zero_gcp')}
+          <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900">
+            Export / Import
           </span>
         </div>
 
@@ -318,16 +678,16 @@ export default component$(() => {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           <button
             type="button"
-            onClick$={handleSaveToDrive$}
+            onClick$={handleExportLocal$}
             class="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-xs shadow-md active:scale-95 transition-all cursor-pointer"
           >
             <SvgIcon name="download" size={16} />
-            <span>{t(lang, 'backup.save_to_drive')}</span>
+            <span>{t(lang, 'backup.export_now')}</span>
           </button>
 
           <label class="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl border-2 border-amber-300 hover:bg-amber-50 text-amber-900 font-black text-xs cursor-pointer transition-all text-center">
             <SvgIcon name="upload" size={16} />
-            <span>{t(lang, 'backup.restore_from_drive')}</span>
+            <span>{t(lang, 'backup.import_now')}</span>
             <input
               type="file"
               accept=".json,.enc"

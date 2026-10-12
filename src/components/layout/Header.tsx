@@ -1,8 +1,7 @@
-import { component$, $ } from '@builder.io/qwik';
+import { component$ } from '@builder.io/qwik';
 import { useI18n, t } from '../../i18n/context';
 import { SvgIcon } from '../icons/SvgIcon';
 import { HoneyMascotSvg } from '../illustrations/HoneyMascotSvg';
-import { saveBackupWithoutGCP } from '../../services/backup/driveSync';
 
 interface HeaderProps {
   baseCurrency?: string;
@@ -10,14 +9,6 @@ interface HeaderProps {
 
 export const Header = component$<HeaderProps>(({ baseCurrency = 'EUR' }) => {
   const { lang, setLang$ } = useI18n();
-
-  const handleQuickBackup$ = $(async () => {
-    try {
-      await saveBackupWithoutGCP();
-    } catch (e) {
-      console.error(e);
-    }
-  });
 
   return (
     <header class="sticky top-0 z-40 bg-amber-50/90 backdrop-blur-md border-b border-amber-200/60 px-4 py-3 transition-colors">
@@ -70,16 +61,15 @@ export const Header = component$<HeaderProps>(({ baseCurrency = 'EUR' }) => {
             </button>
           </div>
 
-          {/* Quick Backup to Drive Button */}
-          <button
-            type="button"
-            onClick$={handleQuickBackup$}
-            class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold text-xs shadow-xs active:scale-95 transition-all cursor-pointer"
-            title={t(lang, 'backup.save_to_drive')}
+          {/* Cloud Sync Button */}
+          <a
+            href="/settings/#sync"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold text-xs shadow-xs active:scale-95 transition-all cursor-pointer"
+            title={t(lang, 'sync.title')}
           >
-            <SvgIcon name="download" size={14} class="stroke-2" />
-            <span class="hidden md:inline">{t(lang, 'common.save')}</span>
-          </button>
+            <SvgIcon name="cloud" size={14} class="stroke-2 text-amber-900" />
+            <span class="hidden md:inline">{t(lang, 'sync.title')}</span>
+          </a>
         </div>
       </div>
     </header>

@@ -8,7 +8,7 @@ export const REAL_SETTINGS: AppSettingsRecord = {
   theme: 'honey-mga-real',
   rates: DEFAULT_RATES_FROM_EUR,
   lastRatesUpdate: new Date().toISOString(),
-  seedVersion: 5,
+  seedVersion: 6,
 };
 
 export const REAL_ACCOUNTS: Account[] = [
@@ -17,7 +17,7 @@ export const REAL_ACCOUNTS: Account[] = [
     "name": "Cash (Esp\u00e8ces)",
     "type": "cash",
     "currencyCode": "MGA",
-    "balance": 170000,
+    "balance": 168000,
     "color": "#F59E0B",
     "iconSvg": "wallet"
   },
@@ -26,7 +26,7 @@ export const REAL_ACCOUNTS: Account[] = [
     "name": "Mvola 2",
     "type": "checking",
     "currencyCode": "MGA",
-    "balance": 158650,
+    "balance": 236150,
     "color": "#10B981",
     "iconSvg": "coin"
   },
@@ -35,7 +35,7 @@ export const REAL_ACCOUNTS: Account[] = [
     "name": "Orange Money",
     "type": "checking",
     "currencyCode": "MGA",
-    "balance": 1590,
+    "balance": 13590,
     "color": "#F97316",
     "iconSvg": "vault"
   },
@@ -53,7 +53,7 @@ export const REAL_ACCOUNTS: Account[] = [
     "name": "Redotpay",
     "type": "checking",
     "currencyCode": "USD",
-    "balance": 2.31,
+    "balance": 0.81,
     "color": "#8B5CF6",
     "iconSvg": "piggy"
   }
@@ -5420,5 +5420,66 @@ export const REAL_TRANSACTIONS: Transaction[] = [
     "items": [
       { "id": "1", "name": "Achat Redotpay (x3)", "amount": 4.5, "quantity": 3 }
     ]
+  },
+  {
+    "id": 496,
+    "accountId": 2,
+    "categoryId": 41,
+    "amount": 50000.0,
+    "date": "2026-10-12 11:30",
+    "label": "Versement",
+    "notes": "Versement Mvola 2",
+    "type": "income"
+  },
+  {
+    "id": 497,
+    "accountId": 5,
+    "categoryId": 11,
+    "amount": 1.5,
+    "date": "2026-10-12 11:30",
+    "label": "Paiement Redotpay",
+    "notes": "Paiement en ligne (1.50 $)",
+    "type": "expense"
+  },
+  {
+    "id": 498,
+    "accountId": 1,
+    "categoryId": 15,
+    "amount": 2000.0,
+    "date": "2026-10-12 12:12",
+    "label": "Déjeuner",
+    "notes": "Déjeuner",
+    "type": "expense"
+  },
+  {
+    "id": 499,
+    "accountId": 2,
+    "categoryId": 41,
+    "amount": 50000.0,
+    "date": "2026-10-12 14:00",
+    "label": "Versement",
+    "notes": "Versement Mvola 2",
+    "type": "income"
+  },
+  {
+    "id": 500,
+    "accountId": 2,
+    "targetAccountId": 3,
+    "categoryId": 45,
+    "amount": 12000.0,
+    "date": "2026-10-12 14:00",
+    "label": "Transfert vers Orange Money",
+    "notes": "Transfert Mvola 2 -> Orange Money",
+    "type": "transfer"
+  },
+  {
+    "id": 501,
+    "accountId": 2,
+    "categoryId": 31,
+    "amount": 10500.0,
+    "date": "2026-10-12 14:30",
+    "label": "Paiement Lucio",
+    "notes": "Paiement Lucio",
+    "type": "expense"
   }
 ];

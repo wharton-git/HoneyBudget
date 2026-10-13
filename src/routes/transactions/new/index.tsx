@@ -1,4 +1,4 @@
-import { component$, useStore, $, useVisibleTask$ } from '@builder.io/qwik';
+import { component$, useStore, $, useVisibleTask$, useComputed$ } from '@builder.io/qwik';
 import { useLocation, useNavigate, type DocumentHead } from '@builder.io/qwik-city';
 import { useI18n, t } from '../../../i18n/context';
 import { SvgIcon } from '../../../components/icons/SvgIcon';
@@ -73,6 +73,16 @@ export default component$(() => {
     }
     if (isCashOnlyAccount(newAcc)) {
       state.fee = '0';
+    }
+    // Prevent collision between source and target accounts in transfer mode
+    if (state.type === 'transfer' && state.targetAccountId === accId) {
+      const otherAcc = state.accounts.find((a) => a.id !== accId);
+      if (otherAcc) {
+        state.targetAccountId = otherAcc.id!;
+      }
+    }
+    if (state.errorMessage) {
+      state.errorMessage = '';
     }
   });
 
@@ -315,7 +325,7 @@ export default component$(() => {
     }
   });
 
-  const currentAccount = state.accounts.find((a) => a.id === state.accountId);
+  const currentAccount = useComputed$(() => state.accounts.find((a) => a.id === state.accountId));
   const isEditing = state.editTxId > 0;
 
   return (
@@ -392,6 +402,15 @@ export default component$(() => {
               onClick$={() => {
                 state.type = 'transfer';
                 state.isGroup = false;
+                if (state.targetAccountId === state.accountId || !state.targetAccountId) {
+                  const otherAcc = state.accounts.find((a) => a.id !== state.accountId);
+                  if (otherAcc) {
+                    state.targetAccountId = otherAcc.id!;
+                  }
+                }
+                if (state.errorMessage) {
+                  state.errorMessage = '';
+                }
               }}
               class={`py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                 state.type === 'transfer'
@@ -615,16 +634,16 @@ export default component$(() => {
               </div>
 
               {/* Live conversion preview if different from account's currency */}
-              {currentAccount && state.currencyCode !== currentAccount.currencyCode && !isNaN(parseFloat(state.amount)) && parseFloat(state.amount) > 0 && (
+              {currentAccount.value && state.currencyCode !== currentAccount.value.currencyCode && !isNaN(parseFloat(state.amount)) && parseFloat(state.amount) > 0 && (
                 <div class="mt-2.5 bg-amber-50 rounded-2xl p-3 border border-amber-200 text-xs font-bold text-amber-900 flex items-center justify-between">
                   <div class="flex items-center gap-1.5">
                     <SvgIcon name="swap" size={14} class="text-amber-600" />
-                    <span>{t(lang, 'tx.converted_preview')} ({currentAccount.name}) :</span>
+                    <span>{t(lang, 'tx.converted_preview')} ({currentAccount.value.name}) :</span>
                   </div>
                   <span class="text-amber-950 font-black">
                     {formatMoney(
-                      convertCurrency(parseFloat(state.amount), state.currencyCode, currentAccount.currencyCode, state.rates),
-                      currentAccount.currencyCode,
+                      convertCurrency(parseFloat(state.amount), state.currencyCode, currentAccount.value.currencyCode, state.rates),
+                      currentAccount.value.currencyCode,
                       lang === 'en' ? 'en-US' : 'fr-FR'
                     )}
                   </span>
@@ -674,7 +693,10 @@ export default component$(() => {
               </label>
               <select
                 value={state.targetAccountId}
-                onChange$={(e: any) => (state.targetAccountId = parseInt(e.target.value, 10))}
+                onChange$={(e: any) => {
+                  state.targetAccountId = parseInt(e.target.value, 10);
+                  if (state.errorMessage) state.errorMessage = '';
+                }}
                 class="w-full text-sm font-semibold text-slate-800 px-3.5 py-3 rounded-2xl border-2 border-amber-200 focus:border-amber-400 focus:outline-none bg-white cursor-pointer"
               >
                 {state.accounts
@@ -707,7 +729,7 @@ export default component$(() => {
         </div>
 
         {/* 4.5 Frais de transaction (pour les comptes autres que le cash) */}
-        {currentAccount && !isCashOnlyAccount(currentAccount) && (
+        {currentAccount.value && !isCashOnlyAccount(currentAccount.value) && (
           <div class="p-4 bg-amber-50/70 rounded-2xl border-2 border-amber-200/90 space-y-3">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
@@ -719,7 +741,7 @@ export default component$(() => {
                     {t(lang, 'tx.fees')}
                   </span>
                   <span class="text-[11px] font-medium text-slate-500">
-                    {t(lang, 'tx.fees_deducted_from')} {currentAccount.name} ({currentAccount.currencyCode})
+                    {t(lang, 'tx.fees_deducted_from')} {currentAccount.value.name} ({currentAccount.value.currencyCode})
                   </span>
                 </div>
               </div>
@@ -748,12 +770,12 @@ export default component$(() => {
                 />
               </div>
               <div class="px-3.5 py-2.5 bg-amber-100 rounded-xl text-xs font-black text-amber-900 shrink-0">
-                {currentAccount.currencyCode}
+                {currentAccount.value.currencyCode}
               </div>
             </div>
 
             {/* Quick shortcuts for MGA accounts */}
-            {currentAccount.currencyCode === 'MGA' && (
+            {currentAccount.value.currencyCode === 'MGA' && (
               <div class="flex items-center gap-1.5 flex-wrap pt-0.5">
                 <span class="text-[10px] font-bold text-slate-500 mr-1">{t(lang, 'tx.shortcuts')}</span>
                 {[0, 100, 200, 300, 500, 1000, 1500, 2000].map((preset) => (
@@ -788,7 +810,7 @@ export default component$(() => {
                     state.type === 'income'
                       ? Math.max(0, (parseFloat(state.amount) || 0) - (parseFloat(state.fee) || 0))
                       : (parseFloat(state.amount) || 0) + (parseFloat(state.fee) || 0),
-                    currentAccount.currencyCode,
+                    currentAccount.value.currencyCode,
                     lang === 'en' ? 'en-US' : 'fr-FR'
                   )}
                 </span>
